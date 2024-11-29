@@ -17,7 +17,7 @@ class MediaCard extends StatelessWidget {
       width: 150, // Largeur fixe de la carte
       margin: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.blueBlue,
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Column(
@@ -46,7 +46,7 @@ class MediaCard extends StatelessWidget {
               style: const TextStyle(
                 color: AppColors.white,
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
