@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wikiwomics/components/media_card.dart';
 
 void main() {
   runApp(const MyApp());
@@ -105,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const MediaCard(imageUrl: "https://images.affiches-et-posters.com//albums/3/56170/medium/affiche-film-joker.jpg", title: "titre super looong"),
             const Text(
               'You have pushed the button this many times:',
             ),
