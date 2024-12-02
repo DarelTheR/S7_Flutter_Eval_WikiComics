@@ -23,9 +23,12 @@ class MediaCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect( // rectangle aux bords arrondis
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
-            child: Image.network( // Image récupérée depuis une URL.
+          ClipRRect(
+            // rectangle aux bords arrondis
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(12.0)),
+            child: Image.network(
+              // Image récupérée depuis une URL.
               imageUrl,
               width: double.infinity,
               height: 200, // Hauteur fixe de l'image
@@ -34,7 +37,8 @@ class MediaCard extends StatelessWidget {
                 return Container(
                   height: 200,
                   color: Colors.grey,
-                  child: const Center(child: Icon(Icons.error, color: Colors.white)),
+                  child: const Center(
+                      child: Icon(Icons.error, color: Colors.white)),
                 );
               },
             ),
