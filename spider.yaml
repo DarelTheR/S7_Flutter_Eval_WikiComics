@@ -1,0 +1,8 @@
+no_comments: true
+package: res
+
+groups:
+  - path: res/svg
+    class_name: AppVectorialImages
+    package: res
+    types: [ .svg ]
