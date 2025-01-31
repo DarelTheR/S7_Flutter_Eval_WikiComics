@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wikiwomics/bloc/Comics_bloc/comics_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/res/app_colors.dart';
+import 'package:wikiwomics/pages/comic_detail_page.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
 import '../app_routes.dart';
 
@@ -42,7 +43,7 @@ class ComicsPage extends StatelessWidget {
                         itemCount: state.comics.length,
                         itemBuilder: (context, index) {
                           final comic = state.comics[index];
-                          return _buildComicCard(comic, index);
+                          return _buildComicCard(comic, index, context);
                         },
                       );
                     } else if (state is ComicsError) {
@@ -81,83 +82,94 @@ class ComicsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildComicCard(Map<String, dynamic> comic, int index) {
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 16.0),
-          padding: const EdgeInsets.all(16.0),
-          height: 150,
-          decoration: BoxDecoration(
-            color: AppColors.Section_1E3243,
-            borderRadius: BorderRadius.circular(12.0),
+  Widget _buildComicCard(Map<String, dynamic> comic, int index, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ComicDetailPage(comic: comic),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.network(
-                  comic['imageUrl'],
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.broken_image,
-                    size: 120,
-                    color: Colors.white,
+        );
+      },
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.all(16.0),
+            height: 150,
+            decoration: BoxDecoration(
+              color: AppColors.Section_1E3243,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    comic['imageUrl'],
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.broken_image,
+                      size: 120,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      comic['title'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        comic['title'],
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                        AppVectorialImages.icPublisherBicolor, comic['studio']),
-                    _buildInfoRow(AppVectorialImages.icTvBicolor,
-                        "Édition : ${comic['issueNumber']}"),
-                    _buildInfoRow(AppVectorialImages.icCalendarBicolor,
-                        comic['releaseDate']),
-                  ],
+                      const SizedBox(height: 8),
+                      _buildInfoRow(
+                          AppVectorialImages.icPublisherBicolor, comic['studio']),
+                      _buildInfoRow(AppVectorialImages.icTvBicolor,
+                          "Édition : ${comic['issueNumber']}"),
+                      _buildInfoRow(AppVectorialImages.icCalendarBicolor,
+                          comic['releaseDate']),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                "#${index + 1}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 8,
-          left: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              "#${index + 1}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
