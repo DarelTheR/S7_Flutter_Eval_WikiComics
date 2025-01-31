@@ -14,7 +14,7 @@ class MediaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 150, // Largeur fixe de la carte
+      width: 150,
       margin: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         color: AppColors.blueBlue,
@@ -24,18 +24,16 @@ class MediaCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            // rectangle aux bords arrondis
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(12.0)),
             child: Image.network(
-              // Image récupérée depuis une URL.
               imageUrl,
               width: double.infinity,
-              height: 200, // Hauteur fixe de l'image
+              height: 150,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  height: 200,
+                  height: 150,
                   color: Colors.grey,
                   child: const Center(
                       child: Icon(Icons.error, color: Colors.white)),
@@ -48,8 +46,8 @@ class MediaCard extends StatelessWidget {
             child: Text(
               title,
               style: const TextStyle(
-                color: AppColors.white,
-                fontSize: 16,
+                color: Colors.white,
+                fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
               maxLines: 2,

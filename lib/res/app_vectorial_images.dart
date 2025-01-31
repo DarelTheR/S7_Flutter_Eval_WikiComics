@@ -17,4 +17,5 @@ class AppVectorialImages {
   static const String navbarMovies = 'res/svg/navbar_movies.svg';
   static const String navbarSearch = 'res/svg/navbar_search.svg';
   static const String navbarSeries = 'res/svg/navbar_series.svg';
+  static const String RectangleSerie = 'res/svg/Rectancle.svg';
 }
