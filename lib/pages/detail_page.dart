@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wikiwomics/bloc/ComicDetail_bloc/comic_detail_bloc.dart';
+import 'package:wikiwomics/bloc/Detail_bloc/detail_bloc.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 
-class ComicDetailPage extends StatelessWidget {
-  final Map<String, dynamic> comic;
+class DetailPage extends StatelessWidget {
+  final Map<String, dynamic> media;
+  final String mediaType; // "Comic", "Movie", "Serie"
 
-  const ComicDetailPage({super.key, required this.comic});
+  const DetailPage({super.key, required this.media, required this.mediaType});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ComicDetailBloc()..add(LoadComicDetail(comic)),
+      create: (context) => DetailBloc()..add(LoadDetail(media)),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(comic['title']),
+          title: Text(media['title'] ?? "Titre inconnu"),
           backgroundColor: AppColors.Section_1E3243,
         ),
-        body: BlocBuilder<ComicDetailBloc, ComicDetailState>(
+        body: BlocBuilder<DetailBloc, DetailState>(
           builder: (context, state) {
-            if (state is ComicDetailLoaded) {
+            if (state is DetailLoaded) {
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -29,7 +30,7 @@ class ComicDetailPage extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
                         child: Image.network(
-                          state.comic['imageUrl'],
+                          state.media['imageUrl'] ?? "https://via.placeholder.com/150",
                           width: 200,
                           height: 300,
                           fit: BoxFit.cover,
@@ -42,25 +43,19 @@ class ComicDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16.0),
-                    Text(
-                      "Titre: ${state.comic['title']}",
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      "Studio: ${state.comic['studio']}",
-                      style: const TextStyle(fontSize: 18, color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      "Date de sortie: ${state.comic['releaseDate']}",
-                      style: const TextStyle(fontSize: 18, color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      "Numéro d'édition: ${state.comic['issueNumber']}",
-                      style: const TextStyle(fontSize: 18, color: Colors.white70),
-                    ),
+                    _buildDetailRow("Titre", state.media['title'] ?? "Titre inconnu"),
+                    _buildDetailRow("Studio", state.media['studio'] ?? "Studio inconnu"),
+                    _buildDetailRow("Date de sortie", state.media['releaseDate'] ?? "Date inconnue"),
+
+                    if (mediaType == "Comic")
+                      _buildDetailRow("Numéro d'édition", state.media['issueNumber'] ?? "Inconnu"),
+
+                    if (mediaType == "Movie")
+                      _buildDetailRow("Durée", "${state.media['runtime'] ?? 'Durée inconnue'} minutes"),
+
+                    if (mediaType == "Serie")
+                      _buildDetailRow("Épisodes", "${state.media['episodes'] ?? 'Inconnu'} épisodes"),
+
                     const SizedBox(height: 16.0),
                     ElevatedButton(
                       onPressed: () {
@@ -80,6 +75,16 @@ class ComicDetailPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Text(
+        "$label : $value",
+        style: const TextStyle(fontSize: 18, color: Colors.white70),
       ),
     );
   }

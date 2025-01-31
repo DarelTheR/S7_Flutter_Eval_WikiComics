@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wikiwomics/bloc/Serie_bloc/series_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
+import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
 import '../app_routes.dart';
@@ -42,7 +43,7 @@ class SeriesPage extends StatelessWidget {
                         itemCount: state.series.length,
                         itemBuilder: (context, index) {
                           final series = state.series[index];
-                          return _buildSeriesCard(series, index);
+                          return _buildSeriesCard(series, index, context);
                         },
                       );
                     } else if (state is SeriesError) {
@@ -81,81 +82,88 @@ class SeriesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSeriesCard(Map<String, dynamic> series, int index) {
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 16.0),
-          padding: const EdgeInsets.all(16.0),
-          height: 150,
-          decoration: BoxDecoration(
-            color: AppColors.Section_1E3243,
-            borderRadius: BorderRadius.circular(12.0),
+  Widget _buildSeriesCard(Map<String, dynamic> series, int index, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPage(media: series, mediaType: "Serie"),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.network(
-                  series['imageUrl'],
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.broken_image,
-                    size: 120,
-                    color: Colors.white,
+        );
+      },
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.all(16.0),
+            height: 150,
+            decoration: BoxDecoration(
+              color: AppColors.Section_1E3243,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    series['imageUrl'] ?? "https://via.placeholder.com/150",
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.broken_image,
+                      size: 120,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      series['title'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        series['title'] ?? "Titre inconnu",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(AppVectorialImages.icPublisherBicolor,
-                        series['studio']),
-                    _buildInfoRow(AppVectorialImages.icTvBicolor,
-                        "${series['episodes']} épisodes"),
-                    _buildInfoRow(
-                        AppVectorialImages.icCalendarBicolor, series['year']),
-                  ],
+                      const SizedBox(height: 8),
+                      _buildInfoRow(AppVectorialImages.icPublisherBicolor, series['studio'] ?? "Studio inconnu"),
+                      _buildInfoRow(AppVectorialImages.icTvBicolor, "${series['episodes']} épisodes"),
+                      _buildInfoRow(AppVectorialImages.icCalendarBicolor, series['year'] ?? "Année inconnue"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                "#${index + 1}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 8,
-          left: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              "#${index + 1}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wikiwomics/bloc/Movies_bloc/movies_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
+import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
 import '../app_routes.dart';
@@ -42,7 +43,7 @@ class MoviesPage extends StatelessWidget {
                         itemCount: state.movies.length,
                         itemBuilder: (context, index) {
                           final movie = state.movies[index];
-                          return _buildMovieCard(movie, index);
+                          return _buildMovieCard(movie, index, context);
                         },
                       );
                     } else if (state is MoviesError) {
@@ -81,86 +82,96 @@ class MoviesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMovieCard(Map<String, dynamic> movie, int index) {
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 16.0),
-          padding: const EdgeInsets.all(16.0),
-          height: 150,
-          decoration: BoxDecoration(
-            color: AppColors.Section_1E3243,
-            borderRadius: BorderRadius.circular(12.0),
+  Widget _buildMovieCard(Map<String, dynamic> movie, int index, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPage(media: movie, mediaType: "Movie"),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.network(
-                  movie['imageUrl'],
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.broken_image,
-                    size: 120,
-                    color: Colors.white,
+        );
+      },
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.all(16.0),
+            height: 150,
+            decoration: BoxDecoration(
+              color: AppColors.Section_1E3243,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    movie['imageUrl'],
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.broken_image,
+                      size: 120,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      movie['title'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        movie['title'],
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      AppVectorialImages.icTvBicolor,
-                      movie['runtime'] != "Durée inconnue"
-                          ? "Durée : ${movie['runtime']} minutes"
-                          : "Durée inconnue",
-                    ),
-                    _buildInfoRow(AppVectorialImages.icCalendarBicolor,
-                        movie['releaseDate']),
-                  ],
+                      const SizedBox(height: 8),
+                      _buildInfoRow(
+                        AppVectorialImages.icTvBicolor,
+                        movie['runtime'] != "Durée inconnue"
+                            ? "Durée : ${movie['runtime']} minutes"
+                            : "Durée inconnue",
+                      ),
+                      _buildInfoRow(AppVectorialImages.icCalendarBicolor, movie['releaseDate']),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                "#${index + 1}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 8,
-          left: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              "#${index + 1}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
+  /// Ajout de _buildInfoRow pour éviter l'erreur
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [

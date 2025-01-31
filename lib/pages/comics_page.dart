@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wikiwomics/bloc/Comics_bloc/comics_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/res/app_colors.dart';
-import 'package:wikiwomics/pages/comic_detail_page.dart';
+import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
 import '../app_routes.dart';
 
@@ -88,7 +88,7 @@ class ComicsPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ComicDetailPage(comic: comic),
+            builder: (context) => DetailPage(media: comic, mediaType: "Comic"),
           ),
         );
       },
