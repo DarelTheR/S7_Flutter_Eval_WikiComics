@@ -46,6 +46,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       final data = jsonDecode(response.body);
       return (data['results'] as List).map((item) {
         return {
+          "id": item["id"], // Ajout de l'identifiant pour la navigation vers la DetailPage
           "imageUrl": item["image"]?["medium_url"] ?? "https://via.placeholder.com/150",
           "title": item["name"] ?? "Titre inconnu",
         };

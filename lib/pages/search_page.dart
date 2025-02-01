@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wikiwomics/bloc/Search_bloc/search_bloc.dart';
+import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/components/media_card.dart';
 import 'package:wikiwomics/res/app_colors.dart';
@@ -153,47 +154,77 @@ class SearchPage extends StatelessWidget {
     return results.isEmpty
         ? const SizedBox.shrink()
         : Container(
-      margin: const EdgeInsets.only(bottom: 32.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors.Section_1E3243,
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.circle, size: 8, color: Colors.orange),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 250,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: results.length,
-              itemBuilder: (context, index) {
-                return MediaCard(
-                  imageUrl: results[index]["imageUrl"]!,
-                  title: results[index]["title"]!,
-                );
-              },
+            margin: const EdgeInsets.only(bottom: 32.0),
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: AppColors.Section_1E3243,
+              borderRadius: BorderRadius.circular(12.0),
             ),
-          ),
-        ],
-      ),
-    );
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.circle, size: 8, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 250,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: results.length,
+                    itemBuilder: (context, index) {
+                      // On détermine le type de média en fonction du titre de la section.
+                      // Attention : dans DetailPage le mediaType attendu est "Serie", "Comic", "Movie" ou "Character"
+                      String mediaType = "";
+                      switch (title) {
+                        case "Séries":
+                          mediaType = "Serie";
+                          break;
+                        case "Comics":
+                          mediaType = "Comic";
+                          break;
+                        case "Films":
+                          mediaType = "Movie";
+                          break;
+                        case "Personnage":
+                          mediaType = "Character";
+                          break;
+                      }
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailPage(
+                                media: results[index],
+                                mediaType: mediaType,
+                              ),
+                            ),
+                          );
+                        },
+                        child: MediaCard(
+                          imageUrl: results[index]["imageUrl"]!,
+                          title: results[index]["title"]!,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
   }
 
   Widget _buildInitialMessage() {
