@@ -11,7 +11,7 @@ import '../app_routes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
+  
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -20,7 +20,8 @@ class _HomePageState extends State<HomePage> {
   final String _apiKey = "91af37aec2e88b4f28ab323c9130d96787c22b2e";
   int _currentTabPosition = 0;
 
-  // Modification de fetchItems pour inclure l'id
+  /// Récupère les items depuis un endpoint donné.  
+  /// On s'attend à ce que la réponse contienne au moins "id", "image" et "name".
   Future<List<Map<String, dynamic>>> fetchItems(String endpoint) async {
     final apiUrl = "https://api.formation-android.fr/comicvine?url=$endpoint&api_key=$_apiKey&format=json";
     try {
@@ -45,7 +46,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _currentTabPosition = position;
     });
-
     switch (position) {
       case 0:
         Navigator.pushReplacementNamed(context, AppRoutes.home);
@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
             _buildSectionWithMore("Films populaires", "movies", "Movie", () {
               Navigator.pushNamed(context, AppRoutes.movies);
             }),
-            _buildSectionWithoutMore("Personnages", "characters"),
+            _buildSectionWithoutMore("Personnages", "characters", "Character"),
           ],
         ),
       ),
@@ -115,8 +115,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionWithMore(
-      String title, String endpoint, String mediaType, VoidCallback onMorePressed) {
+  Widget _buildSectionWithMore(String title, String endpoint, String mediaType, VoidCallback onMorePressed) {
     return Container(
       margin: const EdgeInsets.only(bottom: 32.0),
       padding: const EdgeInsets.all(16.0),
@@ -173,7 +172,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionWithoutMore(String title, String endpoint) {
+  Widget _buildSectionWithoutMore(String title, String endpoint, String mediaType) {
     return Container(
       margin: const EdgeInsets.only(bottom: 32.0),
       padding: const EdgeInsets.all(16.0),
@@ -200,7 +199,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          _buildHorizontalList(endpoint, "Character"),
+          _buildHorizontalList(endpoint, mediaType),
         ],
       ),
     );
@@ -236,20 +235,16 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () {
-                  // Si le mediaType est défini pour naviguer vers DetailPage
-                  if (mediaType == "Serie" ||
-                      mediaType == "Comic" ||
-                      mediaType == "Movie") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailPage(
-                          media: items[index],
-                          mediaType: mediaType,
-                        ),
+                  // Naviguer vers la DetailPage en passant le media complet et le mediaType
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailPage(
+                        media: items[index],
+                        mediaType: mediaType,
                       ),
-                    );
-                  }
+                    ),
+                  );
                 },
                 child: MediaCard(
                   imageUrl: items[index]["imageUrl"]!,
