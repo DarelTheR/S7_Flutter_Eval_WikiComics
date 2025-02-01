@@ -24,10 +24,11 @@ class ComicsBloc extends Bloc<ComicsEvent, ComicsState> {
         final data = jsonDecode(response.body);
         final comics = (data['results'] as List).map((item) {
           return {
-            "title": item["name"] ?? "Titre inconnu",
+            "id": item["id"], // indispensable pour construire l'URL dans DetailBloc
+            "title": item["name"] ?? "", // pour un issue, name peut être null
+            "issue_number": item["issue_number"] ?? "Inconnu",
             "studio": item["publisher"]?["name"] ?? "Studio inconnu",
             "releaseDate": item["cover_date"] ?? "Date inconnue",
-            "issueNumber": item["issue_number"] ?? "Inconnu",
             "imageUrl": item["image"]?["medium_url"] ?? "https://via.placeholder.com/150",
           };
         }).toList();

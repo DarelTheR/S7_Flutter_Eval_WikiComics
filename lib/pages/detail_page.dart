@@ -16,27 +16,59 @@ class DetailPage extends StatelessWidget {
     required this.mediaType,
   }) : super(key: key);
 
-  /// Retourne l'URL de l'image principale en consultant la map "image"
-  String _getImageUrl(Map<String, dynamic> mediaDetails) {
-    if (mediaDetails['image'] != null &&
-        mediaDetails['image'] is Map &&
-        mediaDetails['image']['medium_url'] != null) {
-      return mediaDetails['image']['medium_url'];
+  /// Retourne l'URL de l'image principale depuis la map "image".
+  String _getImageUrl(Map<String, dynamic> details) {
+    if (details['image'] != null &&
+        details['image'] is Map &&
+        details['image']['medium_url'] != null) {
+      return details['image']['medium_url'];
     }
     return "https://via.placeholder.com/150";
   }
 
-  /// Retourne le titre (clé "name")
-  String _getTitle(Map<String, dynamic> mediaDetails) {
-    return mediaDetails['name'] ?? "Titre inconnu";
+  /// Retourne le titre.
+  /// Pour un comic, si "name" est vide ou null, on utilise le nom du volume et le numéro d'issue.
+  String _getTitle(Map<String, dynamic> details) {
+    if (mediaType == "Comic") {
+      if (details['name'] == null || details['name'].toString().isEmpty) {
+        String volumeName = details['volume'] != null && details['volume']['name'] != null
+            ? details['volume']['name']
+            : "Comic";
+        String issueNumber = details['issue_number'] ?? "Inconnu";
+        return "$volumeName #$issueNumber";
+      }
+    }
+    return details['name'] ?? "Titre inconnu";
   }
 
-  /// Pour les séries, on utilise "start_year", sinon "release_date"
-  String _getReleaseDate(Map<String, dynamic> mediaDetails) {
+  /// Retourne la date.
+  /// Pour les séries, utilise "start_year"; pour les comics, "cover_date"; sinon "release_date".
+  String _getReleaseDate(Map<String, dynamic> details) {
     if (mediaType == "Serie") {
-      return mediaDetails['start_year'] ?? "Année inconnue";
+      return details['start_year'] ?? "Année inconnue";
+    } else if (mediaType == "Comic") {
+      return details['cover_date'] ?? "Date inconnue";
     }
-    return mediaDetails['release_date'] ?? "Date inconnue";
+    return details['release_date'] ?? "Date inconnue";
+  }
+
+  /// Retourne une info spécifique.
+  /// - Movie : durée (runtime)
+  /// - Serie : nombre d'épisodes (via "count_of_episodes" ou longueur de "episodes")
+  /// - Comic : affiche "Édition : #issue_number"
+  String _buildMediaSpecificInfo(Map<String, dynamic> details) {
+    if (mediaType == "Movie") {
+      final runtime = details['runtime'] != null ? "${details['runtime']} minutes" : "Durée inconnue";
+      return "Durée : $runtime";
+    } else if (mediaType == "Serie") {
+      final episodesCount = details['count_of_episodes'] ??
+          (details['episodes'] is List ? details['episodes'].length : "Inconnu");
+      return "$episodesCount épisodes";
+    } else if (mediaType == "Comic") {
+      final issueNumber = details['issue_number'] ?? "Inconnu";
+      return "Édition : #$issueNumber";
+    }
+    return "";
   }
 
   @override
@@ -48,11 +80,11 @@ class DetailPage extends StatelessWidget {
         body: BlocBuilder<DetailBloc, DetailState>(
           builder: (context, state) {
             if (state is DetailLoaded) {
-              final mediaDetails = state.media;
-              final mainImageUrl = _getImageUrl(mediaDetails);
+              final details = state.media;
+              final mainImageUrl = _getImageUrl(details);
               return Stack(
                 children: [
-                  // Image de fond avec overlay sombre
+                  // Fond : image avec overlay sombre.
                   Positioned.fill(
                     child: Image.network(
                       mainImageUrl,
@@ -66,12 +98,12 @@ class DetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Contenu principal
+                  // Contenu principal.
                   Positioned.fill(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // AppBar transparente avec bouton retour
+                        // AppBar transparente avec bouton retour.
                         AppBar(
                           backgroundColor: Colors.transparent,
                           elevation: 0,
@@ -81,13 +113,12 @@ class DetailPage extends StatelessWidget {
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                         ),
-                        // En-tête avec image et informations principales
+                        // En-tête : affiche l'image et les informations principales.
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Image du média
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: Image.network(
@@ -95,8 +126,7 @@ class DetailPage extends StatelessWidget {
                                   width: 120,
                                   height: 180,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
                                     Icons.broken_image,
                                     size: 120,
                                     color: Colors.white,
@@ -104,13 +134,12 @@ class DetailPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // Informations principales : titre, date, info spécifique
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _getTitle(mediaDetails),
+                                      _getTitle(details),
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
@@ -122,10 +151,13 @@ class DetailPage extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     _buildInfoRow(
                                       AppVectorialImages.icCalendarBicolor,
-                                      _getReleaseDate(mediaDetails),
+                                      _getReleaseDate(details),
                                     ),
                                     const SizedBox(height: 8),
-                                    _buildMediaSpecificInfoRow(mediaDetails),
+                                    _buildInfoRow(
+                                      AppVectorialImages.icTvBicolor,
+                                      _buildMediaSpecificInfo(details),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -133,7 +165,7 @@ class DetailPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Onglets
+                        // Onglets.
                         Expanded(
                           child: DefaultTabController(
                             length: 3,
@@ -144,17 +176,23 @@ class DetailPage extends StatelessWidget {
                                   labelColor: Colors.white,
                                   unselectedLabelColor: Colors.white,
                                   indicatorWeight: 2,
-                                  tabs: mediaType == "Serie"
+                                  tabs: mediaType == "Comic"
                                       ? const [
                                           Tab(text: "Histoire"),
+                                          Tab(text: "Auteurs"),
                                           Tab(text: "Personnages"),
-                                          Tab(text: "Episodes"),
                                         ]
-                                      : const [
-                                          Tab(text: "Synopsis"),
-                                          Tab(text: "Personnages"),
-                                          Tab(text: "Infos"),
-                                        ],
+                                      : mediaType == "Serie"
+                                          ? const [
+                                              Tab(text: "Histoire"),
+                                              Tab(text: "Personnages"),
+                                              Tab(text: "Episodes"),
+                                            ]
+                                          : const [
+                                              Tab(text: "Synopsis"),
+                                              Tab(text: "Personnages"),
+                                              Tab(text: "Infos"),
+                                            ],
                                 ),
                                 Expanded(
                                   child: Container(
@@ -165,15 +203,14 @@ class DetailPage extends StatelessWidget {
                                         topRight: Radius.circular(16),
                                       ),
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                     child: TabBarView(
-                                      children: mediaType == "Serie"
+                                      children: mediaType == "Comic"
                                           ? [
-                                              // Onglet "Histoire" : affiche la description
+                                              // Onglet "Histoire" pour comics.
                                               SingleChildScrollView(
                                                 child: Html(
-                                                  data: mediaDetails['description'] ??
+                                                  data: details['description'] ??
                                                       "<p>Aucune histoire disponible.</p>",
                                                   style: {
                                                     "body": Style(
@@ -184,32 +221,48 @@ class DetailPage extends StatelessWidget {
                                                   },
                                                 ),
                                               ),
-                                              // Onglet "Personnages" : affiche la liste des personnages
-                                              _buildCharactersTab(mediaDetails),
-                                              // Onglet "Episodes" : affiche la liste des épisodes
-                                              _buildEpisodesTab(mediaDetails),
+                                              // Onglet "Auteurs" pour comics.
+                                              _buildComicAuthorsTab(details),
+                                              // Onglet "Personnages" pour comics.
+                                              _buildComicCharactersTab(details),
                                             ]
-                                          : [
-                                              // Pour films/comics :
-                                              // Onglet "Synopsis"
-                                              SingleChildScrollView(
-                                                child: Html(
-                                                  data: mediaDetails['description'] ??
-                                                      "<p>Aucun synopsis disponible.</p>",
-                                                  style: {
-                                                    "body": Style(
-                                                      color: Colors.white,
-                                                      fontSize: FontSize(16.0),
-                                                      lineHeight: LineHeight(1.5),
+                                          : mediaType == "Serie"
+                                              ? [
+                                                  // Pour les séries.
+                                                  SingleChildScrollView(
+                                                    child: Html(
+                                                      data: details['description'] ??
+                                                          "<p>Aucune histoire disponible.</p>",
+                                                      style: {
+                                                        "body": Style(
+                                                          color: Colors.white,
+                                                          fontSize: FontSize(16.0),
+                                                          lineHeight: LineHeight(1.5),
+                                                        ),
+                                                      },
                                                     ),
-                                                  },
-                                                ),
-                                              ),
-                                              // Onglet "Personnages"
-                                              _buildCharactersTab(mediaDetails),
-                                              // Onglet "Infos"
-                                              _buildInfosTab(mediaDetails),
-                                            ],
+                                                  ),
+                                                  _buildCharactersTab(details),
+                                                  _buildEpisodesTab(details),
+                                                ]
+                                              : [
+                                                  // Pour les films et autres.
+                                                  SingleChildScrollView(
+                                                    child: Html(
+                                                      data: details['description'] ??
+                                                          "<p>Aucun synopsis disponible.</p>",
+                                                      style: {
+                                                        "body": Style(
+                                                          color: Colors.white,
+                                                          fontSize: FontSize(16.0),
+                                                          lineHeight: LineHeight(1.5),
+                                                        ),
+                                                      },
+                                                    ),
+                                                  ),
+                                                  _buildCharactersTab(details),
+                                                  _buildInfosTab(details),
+                                                ],
                                     ),
                                   ),
                                 ),
@@ -229,32 +282,8 @@ class DetailPage extends StatelessWidget {
       ),
     );
   }
-
-  /// Affiche une info spécifique :
-  /// - Pour un film : durée (runtime)
-  /// - Pour une série : nombre d'épisodes (via "count_of_episodes" ou longueur de la liste "episodes")
-  /// - Pour un comic : numéro d'édition
-  Widget _buildMediaSpecificInfoRow(Map<String, dynamic> mediaDetails) {
-    String infoText;
-    if (mediaType == "Movie") {
-      final runtime = mediaDetails['runtime'] != null
-          ? "${mediaDetails['runtime']} minutes"
-          : "Durée inconnue";
-      infoText = "Durée : $runtime";
-    } else if (mediaType == "Serie") {
-      final episodesCount = mediaDetails['count_of_episodes'] ??
-          (mediaDetails['episodes'] is List ? mediaDetails['episodes'].length : "Inconnu");
-      infoText = "$episodesCount épisodes";
-    } else if (mediaType == "Comic") {
-      final issueNumber = mediaDetails['issueNumber'] ?? "Inconnu";
-      infoText = "Numéro d'édition : $issueNumber";
-    } else {
-      infoText = "";
-    }
-    return _buildInfoRow(AppVectorialImages.icTvBicolor, infoText);
-  }
-
-  /// Widget utilitaire pour afficher une ligne d'information avec icône.
+  
+  /// Widget utilitaire pour afficher une ligne d'information avec une icône.
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [
@@ -272,10 +301,10 @@ class DetailPage extends StatelessWidget {
       ],
     );
   }
-
-  /// Affiche la liste des personnages.
-  Widget _buildCharactersTab(Map<String, dynamic> mediaDetails) {
-    final characters = mediaDetails['characters'] as List? ?? [];
+  
+  /// Affiche la liste des personnages pour films et séries.
+  Widget _buildCharactersTab(Map<String, dynamic> details) {
+    final characters = details['characters'] as List? ?? [];
     if (characters.isEmpty) {
       return const Center(
         child: Text(
@@ -289,8 +318,7 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        final imageUrl = character['image']?['medium_url'] ??
-            'https://via.placeholder.com/50';
+        final imageUrl = character['image']?['medium_url'] ?? 'https://via.placeholder.com/50';
         return ListTile(
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(40.0),
@@ -314,42 +342,25 @@ class DetailPage extends StatelessWidget {
       },
     );
   }
-
-  /// Pour les films/comics, affiche des infos complémentaires (exemple : budget, recettes, etc.)
-  Widget _buildInfosTab(Map<String, dynamic> mediaDetails) {
+  
+  /// Pour les films, affiche des infos complémentaires (budget, recettes, etc.).
+  Widget _buildInfosTab(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
       return ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _infoItem(
-            "Budget",
-            mediaDetails['budget'] != null
-                ? "${mediaDetails['budget']} \$"
-                : "Non renseigné",
-          ),
-          _infoItem(
-            "Recettes Box-Office",
-            mediaDetails['box_office_revenue'] != null
-                ? "${mediaDetails['box_office_revenue']} \$"
-                : "Non renseigné",
-          ),
-        ],
-      );
-    } else if (mediaType == "Comic") {
-      return ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _infoItem("Informations", "Données spécifiques aux comics"),
+          _infoItem("Budget", details['budget'] != null ? "${details['budget']} \$" : "Non renseigné"),
+          _infoItem("Recettes Box-Office", details['box_office_revenue'] != null ? "${details['box_office_revenue']} \$" : "Non renseigné"),
         ],
       );
     } else {
       return Container();
     }
   }
-
-  /// Affiche la liste des épisodes pour une série.
-  Widget _buildEpisodesTab(Map<String, dynamic> mediaDetails) {
-    final episodes = mediaDetails['episodes'] as List? ?? [];
+  
+  /// Pour les séries, affiche la liste des épisodes.
+  Widget _buildEpisodesTab(Map<String, dynamic> details) {
+    final episodes = details['episodes'] as List? ?? [];
     if (episodes.isEmpty) {
       return const Center(
         child: Text(
@@ -363,7 +374,6 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final episode = episodes[index];
         final episodeName = episode['name'] ?? "Épisode inconnu";
-        // Utiliser index+1 au lieu de episode['episode_number']
         final episodeNumberDisplay = "Épisode ${index + 1}";
         return ListTile(
           title: Text(
@@ -374,18 +384,98 @@ class DetailPage extends StatelessWidget {
       },
     );
   }
-
-  /// Widget utilitaire pour un item d'information.
+  
+  /// Affiche un item d'information.
   Widget _infoItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         "$label : $value",
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16.0,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16.0),
       ),
+    );
+  }
+  
+  /// Widgets spécifiques pour les comics.
+  
+  /// Affiche la liste des auteurs pour les comics à partir de la clé "person_credits".
+  Widget _buildComicAuthorsTab(Map<String, dynamic> details) {
+    final authors = details['person_credits'] as List? ?? [];
+    if (authors.isEmpty) {
+      return const Center(
+        child: Text(
+          "Aucun auteur disponible.",
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: authors.length,
+      itemBuilder: (context, index) {
+        final author = authors[index];
+        final authorName = author['name'] ?? "Nom inconnu";
+        final imageUrl = (author['image'] != null &&
+                author['image'] is Map &&
+                author['image']['medium_url'] != null)
+            ? author['image']['medium_url']
+            : 'https://via.placeholder.com/50';
+        return ListTile(
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(40.0),
+            child: Image.network(
+              imageUrl,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.person,
+                size: 50,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          title: Text(authorName, style: const TextStyle(color: Colors.white)),
+          subtitle: Text(author['role'] ?? "", style: const TextStyle(color: Colors.white70)),
+        );
+      },
+    );
+  }
+  
+  /// Affiche la liste des personnages pour les comics à partir de la clé "character_credits".
+  Widget _buildComicCharactersTab(Map<String, dynamic> details) {
+    final characters = details['character_credits'] as List? ?? [];
+    if (characters.isEmpty) {
+      return const Center(
+        child: Text(
+          "Aucun personnage disponible.",
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: characters.length,
+      itemBuilder: (context, index) {
+        final character = characters[index];
+        final characterName = character['name'] ?? "Nom inconnu";
+        final imageUrl = character['image']?['medium_url'] ?? 'https://via.placeholder.com/50';
+        return ListTile(
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(40.0),
+            child: Image.network(
+              imageUrl,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.person,
+                size: 50,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          title: Text(characterName, style: const TextStyle(color: Colors.white)),
+        );
+      },
     );
   }
 }

@@ -18,7 +18,7 @@ class DetailBloc extends Bloc<DetailEvent, DetailState> {
             "https://comicvine.gamespot.com/api/movie/4025-$id/?api_key=$apiKey&format=json";
       } else if (event.mediaType == "Comic") {
         endpoint =
-            "https://comicvine.gamespot.com/api/volume/4050-$id/?api_key=$apiKey&format=json";
+            "https://comicvine.gamespot.com/api/issue/4000-$id/?api_key=$apiKey&format=json";
       } else if (event.mediaType == "Serie") {
         // Pour les séries, on utilise "api/series" et le préfixe "4075-"
         endpoint =
