@@ -1,13 +1,12 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:wikiwomics/components/customNavigationBar.dart';
+import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/components/media_card.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
-
 import '../app_routes.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,15 +20,16 @@ class _HomePageState extends State<HomePage> {
   final String _apiKey = "91af37aec2e88b4f28ab323c9130d96787c22b2e";
   int _currentTabPosition = 0;
 
+  // Modification de fetchItems pour inclure l'id
   Future<List<Map<String, dynamic>>> fetchItems(String endpoint) async {
-    final apiUrl =
-        "https://api.formation-android.fr/comicvine?url=$endpoint&api_key=$_apiKey&format=json";
+    final apiUrl = "https://api.formation-android.fr/comicvine?url=$endpoint&api_key=$_apiKey&format=json";
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return (data['results'] as List).map((item) {
           return {
+            "id": item["id"],
             "imageUrl": item["image"]?["medium_url"] ?? "",
             "title": item["name"] ?? "Titre inconnu",
           };
@@ -94,13 +94,13 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 32),
-            _buildSectionWithMore("Séries populaires", "series_list", () {
+            _buildSectionWithMore("Séries populaires", "series_list", "Serie", () {
               Navigator.pushNamed(context, AppRoutes.series);
             }),
-            _buildSectionWithMore("Comics populaires", "issues", () {
+            _buildSectionWithMore("Comics populaires", "issues", "Comic", () {
               Navigator.pushNamed(context, AppRoutes.comics);
             }),
-            _buildSectionWithMore("Films populaires", "movies", () {
+            _buildSectionWithMore("Films populaires", "movies", "Movie", () {
               Navigator.pushNamed(context, AppRoutes.movies);
             }),
             _buildSectionWithoutMore("Personnages", "characters"),
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSectionWithMore(
-      String title, String endpoint, VoidCallback onMorePressed) {
+      String title, String endpoint, String mediaType, VoidCallback onMorePressed) {
     return Container(
       margin: const EdgeInsets.only(bottom: 32.0),
       padding: const EdgeInsets.all(16.0),
@@ -148,8 +148,7 @@ class _HomePageState extends State<HomePage> {
               TextButton(
                 onPressed: onMorePressed,
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   backgroundColor: AppColors.Background,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -168,7 +167,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          _buildHorizontalList(endpoint),
+          _buildHorizontalList(endpoint, mediaType),
         ],
       ),
     );
@@ -201,13 +200,13 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          _buildHorizontalList(endpoint),
+          _buildHorizontalList(endpoint, "Character"),
         ],
       ),
     );
   }
 
-  Widget _buildHorizontalList(String endpoint) {
+  Widget _buildHorizontalList(String endpoint, String mediaType) {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: fetchItems(endpoint),
       builder: (context, snapshot) {
@@ -235,9 +234,27 @@ class _HomePageState extends State<HomePage> {
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
             itemBuilder: (context, index) {
-              return MediaCard(
-                imageUrl: items[index]["imageUrl"]!,
-                title: items[index]["title"]!,
+              return GestureDetector(
+                onTap: () {
+                  // Si le mediaType est défini pour naviguer vers DetailPage
+                  if (mediaType == "Serie" ||
+                      mediaType == "Comic" ||
+                      mediaType == "Movie") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailPage(
+                          media: items[index],
+                          mediaType: mediaType,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: MediaCard(
+                  imageUrl: items[index]["imageUrl"]!,
+                  title: items[index]["title"]!,
+                ),
               );
             },
           ),
