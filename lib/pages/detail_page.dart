@@ -216,10 +216,13 @@ class DetailPage extends StatelessWidget {
                                             fontSize: FontSize(16.0),
                                             lineHeight: LineHeight(1.5),
                                           ),
+                                          "img": Style(
+                                            display: Display.none, // Cache toutes les images
+                                          ),
                                         },
                                       ),
                                     ),
-                                    // Onglet "Auteurs" pour comics.
+                                    // Onglet "Auteurs" pour comics.s
                                     _buildComicAuthorsTab(details),
                                     // Onglet "Personnages" pour comics.
                                     _buildComicCharactersTab(details),
@@ -235,6 +238,9 @@ class DetailPage extends StatelessWidget {
                                                 color: Colors.white,
                                                 fontSize: FontSize(16.0),
                                                 lineHeight: LineHeight(1.5),
+                                              ),
+                                              "img": Style(
+                                                display: Display.none, // Cache toutes les images
                                               ),
                                             },
                                           ),
@@ -253,7 +259,10 @@ class DetailPage extends StatelessWidget {
                                                 fontSize: FontSize(16.0),
                                                 lineHeight: LineHeight(1.5),
                                               ),
-                                            },
+                                              "img": Style(
+                                                  display: Display.none, // Cache toutes les images
+                                                ),
+                                              },
                                           ),
                                         ),
                                         _buildCharactersTab(details),
@@ -444,11 +453,47 @@ class DetailPage extends StatelessWidget {
   /// Pour les films, affiche des infos complémentaires.
   Widget _buildInfosTab(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
+      // On récupère ou on affiche "Non renseigné" si la donnée n'existe pas.
+      String classification = details['rating'] ?? "Non renseigné";
+      // Le champ 'director' n’est pas toujours présent dans la réponse.
+      String director = details['director'] ?? "Non renseigné";
+      
+      String scenaristes = "Non renseigné";
+      if (details['writers'] != null && details['writers'] is List && (details['writers'] as List).isNotEmpty) {
+        scenaristes = (details['writers'] as List)
+            .map((writer) => writer['name'])
+            .join(', ');
+      }
+      
+      String producteurs = "Non renseigné";
+      if (details['producers'] != null && details['producers'] is List && (details['producers'] as List).isNotEmpty) {
+        producteurs = (details['producers'] as List)
+            .map((producer) => producer['name'])
+            .join(', ');
+      }
+      
+      String studios = "Non renseigné";
+      if (details['studios'] != null && details['studios'] is List && (details['studios'] as List).isNotEmpty) {
+        studios = (details['studios'] as List)
+            .map((studio) => studio['name'])
+            .join(', ');
+      }
+      
+      String budget = details['budget'] != null ? "${formatNumberWithSpaces(details['budget'])} \$" : "Non renseigné";
+      String recettesBoxOffice = details['box_office_revenue'] != null ? "${formatNumberWithSpaces(details['box_office_revenue'])} \$" : "Non renseigné";
+      String recettesTotales = details['total_revenue'] != null ? "${formatNumberWithSpaces(details['total_revenue'])} \$" : "Non renseigné";
+
       return ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _infoItem("Budget", details['budget'] != null ? "${details['budget']} \$" : "Non renseigné"),
-          _infoItem("Recettes Box-Office", details['box_office_revenue'] != null ? "${details['box_office_revenue']} \$" : "Non renseigné"),
+          _infoItem("Classification", classification),
+          _infoItem("Réalisateur", director),
+          _infoItem("Scénaristes", scenaristes),
+          _infoItem("Producteurs", producteurs),
+          _infoItem("Studios", studios),
+          _infoItem("Budget", budget),
+          _infoItem("Recettes au box-office", recettesBoxOffice),
+          _infoItem("Recettes brutes totales", recettesTotales),
         ],
       );
     } else {
@@ -611,5 +656,9 @@ class DetailPage extends StatelessWidget {
       RegExp(r'<img[^>]+src="([^">]+)"[^>]*>'),
       (match) => '<img src="${match.group(1)}" />',
     );
+  }
+
+  String formatNumberWithSpaces(String number) {
+    return number.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (Match m) => '${m[1]} ');
   }
 }
