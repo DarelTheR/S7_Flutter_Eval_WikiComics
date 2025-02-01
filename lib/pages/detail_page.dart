@@ -16,7 +16,7 @@ class DetailPage extends StatelessWidget {
     required this.mediaType,
   }) : super(key: key);
 
-  // Méthode utilitaire pour récupérer l'URL de l'image principale
+  /// Retourne l'URL de l'image principale en consultant la map "image"
   String _getImageUrl(Map<String, dynamic> mediaDetails) {
     if (mediaDetails['image'] != null &&
         mediaDetails['image'] is Map &&
@@ -26,19 +26,21 @@ class DetailPage extends StatelessWidget {
     return "https://via.placeholder.com/150";
   }
 
-  // Méthode utilitaire pour récupérer le titre du média
+  /// Retourne le titre (clé "name")
   String _getTitle(Map<String, dynamic> mediaDetails) {
     return mediaDetails['name'] ?? "Titre inconnu";
   }
 
-  // Méthode utilitaire pour récupérer la date de sortie
+  /// Pour les séries, on utilise "start_year", sinon "release_date"
   String _getReleaseDate(Map<String, dynamic> mediaDetails) {
+    if (mediaType == "Serie") {
+      return mediaDetails['start_year'] ?? "Année inconnue";
+    }
     return mediaDetails['release_date'] ?? "Date inconnue";
   }
 
   @override
   Widget build(BuildContext context) {
-    // On passe le media et le mediaType au DetailBloc
     return BlocProvider(
       create: (context) => DetailBloc()..add(LoadDetail(media, mediaType)),
       child: Scaffold(
@@ -79,12 +81,13 @@ class DetailPage extends StatelessWidget {
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                         ),
+                        // En-tête avec image et informations principales
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Image principale du média
+                              // Image du média
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: Image.network(
@@ -130,22 +133,28 @@ class DetailPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Onglets (Synopsis, Personnages, Infos)
+                        // Onglets
                         Expanded(
                           child: DefaultTabController(
                             length: 3,
                             child: Column(
                               children: [
-                                const TabBar(
+                                TabBar(
                                   indicatorColor: Colors.orange,
                                   labelColor: Colors.white,
                                   unselectedLabelColor: Colors.white,
                                   indicatorWeight: 2,
-                                  tabs: [
-                                    Tab(text: "Synopsis"),
-                                    Tab(text: "Personnages"),
-                                    Tab(text: "Infos"),
-                                  ],
+                                  tabs: mediaType == "Serie"
+                                      ? const [
+                                          Tab(text: "Histoire"),
+                                          Tab(text: "Personnages"),
+                                          Tab(text: "Episodes"),
+                                        ]
+                                      : const [
+                                          Tab(text: "Synopsis"),
+                                          Tab(text: "Personnages"),
+                                          Tab(text: "Infos"),
+                                        ],
                                 ),
                                 Expanded(
                                   child: Container(
@@ -159,26 +168,48 @@ class DetailPage extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 20, vertical: 10),
                                     child: TabBarView(
-                                      children: [
-                                        // Onglet Synopsis (description HTML)
-                                        SingleChildScrollView(
-                                          child: Html(
-                                            data: mediaDetails['description'] ??
-                                                "<p>Aucun synopsis disponible.</p>",
-                                            style: {
-                                              "body": Style(
-                                                color: Colors.white,
-                                                fontSize: FontSize(16.0),
-                                                lineHeight: LineHeight(1.5),
+                                      children: mediaType == "Serie"
+                                          ? [
+                                              // Onglet "Histoire" : affiche la description
+                                              SingleChildScrollView(
+                                                child: Html(
+                                                  data: mediaDetails['description'] ??
+                                                      "<p>Aucune histoire disponible.</p>",
+                                                  style: {
+                                                    "body": Style(
+                                                      color: Colors.white,
+                                                      fontSize: FontSize(16.0),
+                                                      lineHeight: LineHeight(1.5),
+                                                    ),
+                                                  },
+                                                ),
                                               ),
-                                            },
-                                          ),
-                                        ),
-                                        // Onglet Personnages
-                                        _buildCharactersTab(mediaDetails),
-                                        // Onglet Infos (budget, recettes, etc.)
-                                        _buildInfosTab(mediaDetails),
-                                      ],
+                                              // Onglet "Personnages" : affiche la liste des personnages
+                                              _buildCharactersTab(mediaDetails),
+                                              // Onglet "Episodes" : affiche la liste des épisodes
+                                              _buildEpisodesTab(mediaDetails),
+                                            ]
+                                          : [
+                                              // Pour films/comics :
+                                              // Onglet "Synopsis"
+                                              SingleChildScrollView(
+                                                child: Html(
+                                                  data: mediaDetails['description'] ??
+                                                      "<p>Aucun synopsis disponible.</p>",
+                                                  style: {
+                                                    "body": Style(
+                                                      color: Colors.white,
+                                                      fontSize: FontSize(16.0),
+                                                      lineHeight: LineHeight(1.5),
+                                                    ),
+                                                  },
+                                                ),
+                                              ),
+                                              // Onglet "Personnages"
+                                              _buildCharactersTab(mediaDetails),
+                                              // Onglet "Infos"
+                                              _buildInfosTab(mediaDetails),
+                                            ],
                                     ),
                                   ),
                                 ),
@@ -199,7 +230,10 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Affiche une info spécifique selon le type (ici, durée pour un film)
+  /// Affiche une info spécifique :
+  /// - Pour un film : durée (runtime)
+  /// - Pour une série : nombre d'épisodes (via "count_of_episodes" ou longueur de la liste "episodes")
+  /// - Pour un comic : numéro d'édition
   Widget _buildMediaSpecificInfoRow(Map<String, dynamic> mediaDetails) {
     String infoText;
     if (mediaType == "Movie") {
@@ -208,10 +242,9 @@ class DetailPage extends StatelessWidget {
           : "Durée inconnue";
       infoText = "Durée : $runtime";
     } else if (mediaType == "Serie") {
-      final episodes = mediaDetails['episodes'] != null
-          ? "${mediaDetails['episodes']} épisodes"
-          : "Inconnu";
-      infoText = "$episodes";
+      final episodesCount = mediaDetails['count_of_episodes'] ??
+          (mediaDetails['episodes'] is List ? mediaDetails['episodes'].length : "Inconnu");
+      infoText = "$episodesCount épisodes";
     } else if (mediaType == "Comic") {
       final issueNumber = mediaDetails['issueNumber'] ?? "Inconnu";
       infoText = "Numéro d'édition : $issueNumber";
@@ -221,7 +254,7 @@ class DetailPage extends StatelessWidget {
     return _buildInfoRow(AppVectorialImages.icTvBicolor, infoText);
   }
 
-  /// Widget utilitaire pour afficher une ligne d'info avec icône et texte
+  /// Widget utilitaire pour afficher une ligne d'information avec icône.
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [
@@ -240,7 +273,7 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Onglet Personnages : affiche la liste des personnages (aucune image dans l’API, on utilise un placeholder)
+  /// Affiche la liste des personnages.
   Widget _buildCharactersTab(Map<String, dynamic> mediaDetails) {
     final characters = mediaDetails['characters'] as List? ?? [];
     if (characters.isEmpty) {
@@ -256,8 +289,8 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        // L'API ne fournit pas d'image pour les personnages, on affiche un placeholder
-        final imageUrl = 'https://via.placeholder.com/50';
+        final imageUrl = character['image']?['medium_url'] ??
+            'https://via.placeholder.com/50';
         return ListTile(
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(40.0),
@@ -282,28 +315,67 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Onglet Infos : affiche par exemple le budget et les recettes box-office
+  /// Pour les films/comics, affiche des infos complémentaires (exemple : budget, recettes, etc.)
   Widget _buildInfosTab(Map<String, dynamic> mediaDetails) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _infoItem(
-          "Budget",
-          mediaDetails['budget'] != null
-              ? "${mediaDetails['budget']} \$"
-              : "Non renseigné",
+    if (mediaType == "Movie") {
+      return ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          _infoItem(
+            "Budget",
+            mediaDetails['budget'] != null
+                ? "${mediaDetails['budget']} \$"
+                : "Non renseigné",
+          ),
+          _infoItem(
+            "Recettes Box-Office",
+            mediaDetails['box_office_revenue'] != null
+                ? "${mediaDetails['box_office_revenue']} \$"
+                : "Non renseigné",
+          ),
+        ],
+      );
+    } else if (mediaType == "Comic") {
+      return ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          _infoItem("Informations", "Données spécifiques aux comics"),
+        ],
+      );
+    } else {
+      return Container();
+    }
+  }
+
+  /// Affiche la liste des épisodes pour une série.
+  Widget _buildEpisodesTab(Map<String, dynamic> mediaDetails) {
+    final episodes = mediaDetails['episodes'] as List? ?? [];
+    if (episodes.isEmpty) {
+      return const Center(
+        child: Text(
+          "Aucun épisode disponible.",
+          style: TextStyle(color: Colors.white),
         ),
-        _infoItem(
-          "Recettes Box-Office",
-          mediaDetails['box_office_revenue'] != null
-              ? "${mediaDetails['box_office_revenue']} \$"
-              : "Non renseigné",
-        ),
-        // Vous pouvez ajouter d'autres infos ici (par exemple, studios, rating, etc.)
-      ],
+      );
+    }
+    return ListView.builder(
+      itemCount: episodes.length,
+      itemBuilder: (context, index) {
+        final episode = episodes[index];
+        final episodeName = episode['name'] ?? "Épisode inconnu";
+        // Utiliser index+1 au lieu de episode['episode_number']
+        final episodeNumberDisplay = "Épisode ${index + 1}";
+        return ListTile(
+          title: Text(
+            "$episodeNumberDisplay - $episodeName",
+            style: const TextStyle(color: Colors.white),
+          ),
+        );
+      },
     );
   }
 
+  /// Widget utilitaire pour un item d'information.
   Widget _infoItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),

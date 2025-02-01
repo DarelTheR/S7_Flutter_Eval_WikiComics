@@ -9,20 +9,20 @@ part 'detail_state.dart';
 class DetailBloc extends Bloc<DetailEvent, DetailState> {
   DetailBloc() : super(DetailInitial()) {
     on<LoadDetail>((event, emit) async {
-      // Utilisation de l'API key et de l'identifiant (présent dans event.media['id'])
       final apiKey = "91af37aec2e88b4f28ab323c9130d96787c22b2e";
       final id = event.media['id'];
       
-      // Construction de l'URL en fonction du type de média.
-      // Pour cet exemple, nous ne traitons que les films.
       String endpoint = "";
       if (event.mediaType == "Movie") {
-        endpoint = "https://comicvine.gamespot.com/api/movie/4025-$id/?api_key=$apiKey&format=json";
+        endpoint =
+            "https://comicvine.gamespot.com/api/movie/4025-$id/?api_key=$apiKey&format=json";
       } else if (event.mediaType == "Comic") {
-        endpoint = "https://comicvine.gamespot.com/api/comic/4050-$id/?api_key=$apiKey&format=json";
+        endpoint =
+            "https://comicvine.gamespot.com/api/volume/4050-$id/?api_key=$apiKey&format=json";
       } else if (event.mediaType == "Serie") {
-        // Adaptez l'URL pour les séries selon votre API
-        endpoint = "https://comicvine.gamespot.com/api/serie/???-$id/?api_key=$apiKey&format=json";
+        // Pour les séries, on utilise "api/series" et le préfixe "4075-"
+        endpoint =
+            "https://comicvine.gamespot.com/api/series/4075-$id/?api_key=$apiKey&format=json";
       }
       
       if (endpoint.isNotEmpty) {
@@ -30,11 +30,11 @@ class DetailBloc extends Bloc<DetailEvent, DetailState> {
           final response = await http.get(Uri.parse(endpoint));
           if (response.statusCode == 200) {
             final data = jsonDecode(response.body);
-            // Extraction de la partie "results"
+            // On extrait la partie "results" de la réponse
             final detailedMedia = data['results'];
             emit(DetailLoaded(detailedMedia));
           } else {
-            emit(DetailLoaded(event.media)); // En cas d'erreur, on renvoie les données initiales
+            emit(DetailLoaded(event.media));
           }
         } catch (e) {
           emit(DetailLoaded(event.media));
