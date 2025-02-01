@@ -9,9 +9,10 @@ abstract class DetailEvent extends Equatable {
 
 class LoadDetail extends DetailEvent {
   final Map<String, dynamic> media;
+  final String mediaType;
 
-  const LoadDetail(this.media);
+  const LoadDetail(this.media, this.mediaType);
 
   @override
-  List<Object> get props => [media];
+  List<Object> get props => [media, mediaType];
 }

@@ -1,4 +1,3 @@
-// lib/bloc/movies_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:http/http.dart' as http;
@@ -24,12 +23,15 @@ class MoviesBloc extends Bloc<MoviesEvent, MoviesState> {
         final data = jsonDecode(response.body);
         final movies = (data['results'] as List).map((item) {
           return {
+            "id": item["id"], // Important pour la requête de détail
             "title": item["name"] ?? "Titre inconnu",
             "releaseDate": item["release_date"] != null
-                ? DateTime.tryParse(item["release_date"])?.year.toString() ?? "Année inconnue"
+                ? DateTime.tryParse(item["release_date"])?.year.toString() ??
+                    "Année inconnue"
                 : "Année inconnue",
             "runtime": item["runtime"] ?? "Durée inconnue",
-            "imageUrl": item["image"]?["medium_url"] ?? "https://via.placeholder.com/150",
+            "imageUrl": item["image"]?["medium_url"] ??
+                "https://via.placeholder.com/150",
           };
         }).toList();
         emit(MoviesLoaded(movies));

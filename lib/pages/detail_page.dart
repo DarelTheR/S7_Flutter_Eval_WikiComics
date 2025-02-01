@@ -16,22 +16,44 @@ class DetailPage extends StatelessWidget {
     required this.mediaType,
   }) : super(key: key);
 
+  // Méthode utilitaire pour récupérer l'URL de l'image principale
+  String _getImageUrl(Map<String, dynamic> mediaDetails) {
+    if (mediaDetails['image'] != null &&
+        mediaDetails['image'] is Map &&
+        mediaDetails['image']['medium_url'] != null) {
+      return mediaDetails['image']['medium_url'];
+    }
+    return "https://via.placeholder.com/150";
+  }
+
+  // Méthode utilitaire pour récupérer le titre du média
+  String _getTitle(Map<String, dynamic> mediaDetails) {
+    return mediaDetails['name'] ?? "Titre inconnu";
+  }
+
+  // Méthode utilitaire pour récupérer la date de sortie
+  String _getReleaseDate(Map<String, dynamic> mediaDetails) {
+    return mediaDetails['release_date'] ?? "Date inconnue";
+  }
+
   @override
   Widget build(BuildContext context) {
+    // On passe le media et le mediaType au DetailBloc
     return BlocProvider(
-      create: (context) => DetailBloc()..add(LoadDetail(media)),
+      create: (context) => DetailBloc()..add(LoadDetail(media, mediaType)),
       child: Scaffold(
         backgroundColor: AppColors.Section_1E3243,
         body: BlocBuilder<DetailBloc, DetailState>(
           builder: (context, state) {
             if (state is DetailLoaded) {
               final mediaDetails = state.media;
+              final mainImageUrl = _getImageUrl(mediaDetails);
               return Stack(
                 children: [
                   // Image de fond avec overlay sombre
                   Positioned.fill(
                     child: Image.network(
-                      mediaDetails['imageUrl'] ?? 'https://via.placeholder.com/150',
+                      mainImageUrl,
                       fit: BoxFit.cover,
                       color: Colors.black.withOpacity(0.6),
                       colorBlendMode: BlendMode.darken,
@@ -42,12 +64,12 @@ class DetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Contenu principal par-dessus
+                  // Contenu principal
                   Positioned.fill(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // AppBar transparent avec bouton retour
+                        // AppBar transparente avec bouton retour
                         AppBar(
                           backgroundColor: Colors.transparent,
                           elevation: 0,
@@ -62,15 +84,16 @@ class DetailPage extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Affichage de l'image du média
+                              // Image principale du média
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: Image.network(
-                                  mediaDetails['imageUrl'] ?? 'https://via.placeholder.com/150',
+                                  mainImageUrl,
                                   width: 120,
                                   height: 180,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
                                     Icons.broken_image,
                                     size: 120,
                                     color: Colors.white,
@@ -84,7 +107,7 @@ class DetailPage extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      mediaDetails['title'] ?? "Titre inconnu",
+                                      _getTitle(mediaDetails),
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
@@ -96,7 +119,7 @@ class DetailPage extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     _buildInfoRow(
                                       AppVectorialImages.icCalendarBicolor,
-                                      mediaDetails['releaseDate'] ?? "Date inconnue",
+                                      _getReleaseDate(mediaDetails),
                                     ),
                                     const SizedBox(height: 8),
                                     _buildMediaSpecificInfoRow(mediaDetails),
@@ -107,7 +130,7 @@ class DetailPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Zone des onglets (Synopsis, Personnages, Infos)
+                        // Onglets (Synopsis, Personnages, Infos)
                         Expanded(
                           child: DefaultTabController(
                             length: 3,
@@ -133,10 +156,11 @@ class DetailPage extends StatelessWidget {
                                         topRight: Radius.circular(16),
                                       ),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
                                     child: TabBarView(
                                       children: [
-                                        // Onglet Synopsis
+                                        // Onglet Synopsis (description HTML)
                                         SingleChildScrollView(
                                           child: Html(
                                             data: mediaDetails['description'] ??
@@ -152,7 +176,7 @@ class DetailPage extends StatelessWidget {
                                         ),
                                         // Onglet Personnages
                                         _buildCharactersTab(mediaDetails),
-                                        // Onglet Infos
+                                        // Onglet Infos (budget, recettes, etc.)
                                         _buildInfosTab(mediaDetails),
                                       ],
                                     ),
@@ -175,14 +199,18 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Affiche la deuxième ligne d’info en fonction du type de média
+  /// Affiche une info spécifique selon le type (ici, durée pour un film)
   Widget _buildMediaSpecificInfoRow(Map<String, dynamic> mediaDetails) {
     String infoText;
     if (mediaType == "Movie") {
-      final runtime = mediaDetails['runtime'] != null ? "${mediaDetails['runtime']} minutes" : "Durée inconnue";
+      final runtime = mediaDetails['runtime'] != null
+          ? "${mediaDetails['runtime']} minutes"
+          : "Durée inconnue";
       infoText = "Durée : $runtime";
     } else if (mediaType == "Serie") {
-      final episodes = mediaDetails['episodes'] != null ? "${mediaDetails['episodes']} épisodes" : "Inconnu";
+      final episodes = mediaDetails['episodes'] != null
+          ? "${mediaDetails['episodes']} épisodes"
+          : "Inconnu";
       infoText = "$episodes";
     } else if (mediaType == "Comic") {
       final issueNumber = mediaDetails['issueNumber'] ?? "Inconnu";
@@ -193,7 +221,7 @@ class DetailPage extends StatelessWidget {
     return _buildInfoRow(AppVectorialImages.icTvBicolor, infoText);
   }
 
-  /// Widget réutilisable pour une ligne d’info avec icône et texte
+  /// Widget utilitaire pour afficher une ligne d'info avec icône et texte
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [
@@ -212,7 +240,7 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Onglet Personnages : affiche la liste des personnages s’ils sont disponibles
+  /// Onglet Personnages : affiche la liste des personnages (aucune image dans l’API, on utilise un placeholder)
   Widget _buildCharactersTab(Map<String, dynamic> mediaDetails) {
     final characters = mediaDetails['characters'] as List? ?? [];
     if (characters.isEmpty) {
@@ -228,8 +256,8 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        // On utilise ici une image de remplacement si aucune n'est fournie
-        final imageUrl = character['imageUrl'] ?? 'https://via.placeholder.com/50';
+        // L'API ne fournit pas d'image pour les personnages, on affiche un placeholder
+        final imageUrl = 'https://via.placeholder.com/50';
         return ListTile(
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(40.0),
@@ -238,8 +266,11 @@ class DetailPage extends StatelessWidget {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.person, size: 50, color: Colors.white),
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.person,
+                size: 50,
+                color: Colors.white,
+              ),
             ),
           ),
           title: Text(
@@ -251,20 +282,24 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Onglet Infos : affiche quelques informations complémentaires sur le média
+  /// Onglet Infos : affiche par exemple le budget et les recettes box-office
   Widget _buildInfosTab(Map<String, dynamic> mediaDetails) {
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        _infoItem("Titre", mediaDetails['title'] ?? "Titre inconnu"),
-        _infoItem("Studio", mediaDetails['studio'] ?? "Studio inconnu"),
-        _infoItem("Date de sortie", mediaDetails['releaseDate'] ?? "Date inconnue"),
-        if (mediaType == "Comic")
-          _infoItem("Numéro d'édition", mediaDetails['issueNumber']?.toString() ?? "Inconnu"),
-        if (mediaType == "Movie")
-          _infoItem("Durée", "${mediaDetails['runtime'] ?? 'Durée inconnue'} minutes"),
-        if (mediaType == "Serie")
-          _infoItem("Épisodes", "${mediaDetails['episodes'] ?? 'Inconnu'} épisodes"),
+        _infoItem(
+          "Budget",
+          mediaDetails['budget'] != null
+              ? "${mediaDetails['budget']} \$"
+              : "Non renseigné",
+        ),
+        _infoItem(
+          "Recettes Box-Office",
+          mediaDetails['box_office_revenue'] != null
+              ? "${mediaDetails['box_office_revenue']} \$"
+              : "Non renseigné",
+        ),
+        // Vous pouvez ajouter d'autres infos ici (par exemple, studios, rating, etc.)
       ],
     );
   }
