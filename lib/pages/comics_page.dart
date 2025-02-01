@@ -124,8 +124,9 @@ class ComicsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Titre du volume.
                       Text(
-                        comic['title'],
+                        comic['volume_title'],
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -133,13 +134,25 @@ class ComicsPage extends StatelessWidget {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
+                      // Sous-titre : titre de l'issue.
+                      Text(
+                        comic['issue_title'] != "" ? comic['issue_title'] : "Titre de l'épisode non renseigné",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 8),
                       _buildInfoRow(
-                          AppVectorialImages.icPublisherBicolor, comic['studio']),
-                      _buildInfoRow(AppVectorialImages.icTvBicolor,
-                          "Édition : ${comic['issueNumber']}"),
-                      _buildInfoRow(AppVectorialImages.icCalendarBicolor,
-                          comic['releaseDate']),
+                        AppVectorialImages.icTvBicolor,
+                        "Édition : ${comic['issue_number']}",
+                      ),
+                      _buildInfoRow(
+                        AppVectorialImages.icCalendarBicolor,
+                        comic['releaseDate'],
+                      ),
                     ],
                   ),
                 ),
@@ -170,7 +183,6 @@ class ComicsPage extends StatelessWidget {
     );
   }
 
-
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [
@@ -194,4 +206,5 @@ class ComicsPage extends StatelessWidget {
       ],
     );
   }
+
 }

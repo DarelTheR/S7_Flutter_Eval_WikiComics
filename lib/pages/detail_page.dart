@@ -16,7 +16,7 @@ class DetailPage extends StatelessWidget {
     required this.mediaType,
   }) : super(key: key);
 
-  /// Retourne l'URL de l'image principale depuis la map "image".
+  /// Retourne l'URL de l'image principale en consultant la map "image".
   String _getImageUrl(Map<String, dynamic> details) {
     if (details['image'] != null &&
         details['image'] is Map &&
@@ -26,36 +26,23 @@ class DetailPage extends StatelessWidget {
     return "https://via.placeholder.com/150";
   }
 
-  /// Retourne le titre.
-  /// Pour un comic, si "name" est vide ou null, on utilise le nom du volume et le numéro d'issue.
+  /// Retourne le titre (clé "name").
   String _getTitle(Map<String, dynamic> details) {
-    if (mediaType == "Comic") {
-      if (details['name'] == null || details['name'].toString().isEmpty) {
-        String volumeName = details['volume'] != null && details['volume']['name'] != null
-            ? details['volume']['name']
-            : "Comic";
-        String issueNumber = details['issue_number'] ?? "Inconnu";
-        return "$volumeName #$issueNumber";
-      }
-    }
     return details['name'] ?? "Titre inconnu";
   }
 
-  /// Retourne la date.
-  /// Pour les séries, utilise "start_year"; pour les comics, "cover_date"; sinon "release_date".
+  /// Pour les séries, on utilise "start_year", sinon "release_date".
   String _getReleaseDate(Map<String, dynamic> details) {
     if (mediaType == "Serie") {
       return details['start_year'] ?? "Année inconnue";
-    } else if (mediaType == "Comic") {
-      return details['cover_date'] ?? "Date inconnue";
     }
     return details['release_date'] ?? "Date inconnue";
   }
 
-  /// Retourne une info spécifique.
+  /// Retourne une info spécifique selon le type de média.
   /// - Movie : durée (runtime)
   /// - Serie : nombre d'épisodes (via "count_of_episodes" ou longueur de "episodes")
-  /// - Comic : affiche "Édition : #issue_number"
+  /// - Comic : nombre d'issues (via "count_of_issues") ou le numéro d'édition.
   String _buildMediaSpecificInfo(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
       final runtime = details['runtime'] != null ? "${details['runtime']} minutes" : "Durée inconnue";
@@ -84,7 +71,7 @@ class DetailPage extends StatelessWidget {
               final mainImageUrl = _getImageUrl(details);
               return Stack(
                 children: [
-                  // Fond : image avec overlay sombre.
+                  // Image de fond avec overlay sombre.
                   Positioned.fill(
                     child: Image.network(
                       mainImageUrl,
@@ -113,12 +100,13 @@ class DetailPage extends StatelessWidget {
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                         ),
-                        // En-tête : affiche l'image et les informations principales.
+                        // En-tête avec image et informations principales.
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Image du média.
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
                                 child: Image.network(
@@ -134,12 +122,18 @@ class DetailPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 16),
+                              // Informations principales : titre, sous-titre (pour comics), date et info spécifique.
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // Pour les comics, affiche le titre du volume, sinon le titre.
                                     Text(
-                                      _getTitle(details),
+                                      mediaType == "Comic"
+                                          ? (details['volume'] != null && details['volume']['name'] != null
+                                              ? details['volume']['name']
+                                              : "Titre inconnu")
+                                          : _getTitle(details),
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
@@ -148,6 +142,20 @@ class DetailPage extends StatelessWidget {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
+                                    const SizedBox(height: 4),
+                                    // Pour les comics, affiche le titre de l'issue en sous-titre.
+                                    if (mediaType == "Comic")
+                                      Text(
+                                        details['issue_title'] != null && details['issue_title'].toString().isNotEmpty
+                                            ? details['issue_title']
+                                            : "Titre de l'épisode non renseigné",
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white70,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     const SizedBox(height: 8),
                                     _buildInfoRow(
                                       AppVectorialImages.icCalendarBicolor,
@@ -282,7 +290,7 @@ class DetailPage extends StatelessWidget {
       ),
     );
   }
-  
+
   /// Widget utilitaire pour afficher une ligne d'information avec une icône.
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
@@ -301,7 +309,7 @@ class DetailPage extends StatelessWidget {
       ],
     );
   }
-  
+
   /// Affiche la liste des personnages pour films et séries.
   Widget _buildCharactersTab(Map<String, dynamic> details) {
     final characters = details['characters'] as List? ?? [];
@@ -342,7 +350,7 @@ class DetailPage extends StatelessWidget {
       },
     );
   }
-  
+
   /// Pour les films, affiche des infos complémentaires (budget, recettes, etc.).
   Widget _buildInfosTab(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
@@ -357,7 +365,7 @@ class DetailPage extends StatelessWidget {
       return Container();
     }
   }
-  
+
   /// Pour les séries, affiche la liste des épisodes.
   Widget _buildEpisodesTab(Map<String, dynamic> details) {
     final episodes = details['episodes'] as List? ?? [];
@@ -384,7 +392,7 @@ class DetailPage extends StatelessWidget {
       },
     );
   }
-  
+
   /// Affiche un item d'information.
   Widget _infoItem(String label, String value) {
     return Padding(
@@ -395,7 +403,7 @@ class DetailPage extends StatelessWidget {
       ),
     );
   }
-  
+
   /// Widgets spécifiques pour les comics.
   
   /// Affiche la liste des auteurs pour les comics à partir de la clé "person_credits".
@@ -440,7 +448,7 @@ class DetailPage extends StatelessWidget {
       },
     );
   }
-  
+
   /// Affiche la liste des personnages pour les comics à partir de la clé "character_credits".
   Widget _buildComicCharactersTab(Map<String, dynamic> details) {
     final characters = details['character_credits'] as List? ?? [];

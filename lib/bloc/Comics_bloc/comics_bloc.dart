@@ -1,4 +1,5 @@
-// lib/bloc/comics_bloc.dart
+// lib/bloc/comics_bloc/comics_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,7 @@ part 'comics_event.dart';
 part 'comics_state.dart';
 
 class ComicsBloc extends Bloc<ComicsEvent, ComicsState> {
-  final String _apiKey = "91af37aec2e88b4f28ab323c9130d96787c22b2e";
+  final String _apiKey = "9423cc1c26178968a90ee233468fd390fd839876";
 
   ComicsBloc() : super(ComicsInitial()) {
     on<FetchComics>(_onFetchComics);
@@ -24,10 +25,12 @@ class ComicsBloc extends Bloc<ComicsEvent, ComicsState> {
         final data = jsonDecode(response.body);
         final comics = (data['results'] as List).map((item) {
           return {
-            "id": item["id"], // indispensable pour construire l'URL dans DetailBloc
-            "title": item["name"] ?? "", // pour un issue, name peut être null
+            "id": item["id"], // indispensable pour DetailBloc
+            // Titre du volume
+            "volume_title": item["volume"]?["name"] ?? "Titre inconnu",
+            // Titre de l'issue (peut être vide)
+            "issue_title": item["name"] ?? "",
             "issue_number": item["issue_number"] ?? "Inconnu",
-            "studio": item["publisher"]?["name"] ?? "Studio inconnu",
             "releaseDate": item["cover_date"] ?? "Date inconnue",
             "imageUrl": item["image"]?["medium_url"] ?? "https://via.placeholder.com/150",
           };
