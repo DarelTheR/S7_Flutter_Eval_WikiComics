@@ -226,6 +226,9 @@ class DetailPage extends StatelessWidget {
                                                       fontSize: FontSize(16.0),
                                                       lineHeight: LineHeight(1.5),
                                                     ),
+                                                      "img": Style(
+                                                        display: Display.none, // Cache toutes les images
+                                                      ),
                                                   },
                                                 ),
                                               ),
@@ -247,6 +250,9 @@ class DetailPage extends StatelessWidget {
                                                           fontSize: FontSize(16.0),
                                                           lineHeight: LineHeight(1.5),
                                                         ),
+                                                        "img": Style(
+                                                          display: Display.none, // Cache toutes les images
+                                                        ),
                                                       },
                                                     ),
                                                   ),
@@ -264,6 +270,9 @@ class DetailPage extends StatelessWidget {
                                                           color: Colors.white,
                                                           fontSize: FontSize(16.0),
                                                           lineHeight: LineHeight(1.5),
+                                                        ),
+                                                        "img": Style(
+                                                          display: Display.none, // Cache toutes les images
                                                         ),
                                                       },
                                                     ),
