@@ -8,7 +8,6 @@ import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/components/media_card.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
-import '../app_routes.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -124,27 +123,8 @@ class SearchPage extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomNavigationBar(
+        bottomNavigationBar: const CustomNavigationBar(
           backgroundColor: AppColors.Bottom_bar,
-          currentTabPosition: 4,
-          onDestinationSelected: (index) {
-            switch (index) {
-              case 0:
-                Navigator.pushReplacementNamed(context, AppRoutes.home);
-                break;
-              case 1:
-                Navigator.pushReplacementNamed(context, AppRoutes.comics);
-                break;
-              case 2:
-                Navigator.pushReplacementNamed(context, AppRoutes.series);
-                break;
-              case 3:
-                Navigator.pushReplacementNamed(context, AppRoutes.movies);
-                break;
-              case 4:
-                break;
-            }
-          },
         ),
       ),
     );
@@ -185,8 +165,6 @@ class SearchPage extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: results.length,
                     itemBuilder: (context, index) {
-                      // On détermine le type de média en fonction du titre de la section.
-                      // Attention : dans DetailPage le mediaType attendu est "Serie", "Comic", "Movie" ou "Character"
                       String mediaType = "";
                       switch (title) {
                         case "Séries":

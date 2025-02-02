@@ -1,24 +1,26 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:wikiwomics/app_router.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 
-import 'app_routes.dart';
-
-void main() => runApp(const MyApp());
+void main() { runApp( MyApp());}
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  //const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
+      routerDelegate: appRouter.routerDelegate,
+      routeInformationParser: appRouter.routeInformationParser,
+      routeInformationProvider: appRouter.routeInformationProvider,
       title: 'Wikiwomics',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.Icone),
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.Background,
       ),
-      onGenerateRoute: AppRoutes.generateRoute,
-      initialRoute: AppRoutes.home,
     );
   }
 }

@@ -1,12 +1,13 @@
 // lib/pages/movies_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wikiwomics/bloc/Movies_bloc/movies_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
-import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
+
 import '../app_routes.dart';
 
 class MoviesPage extends StatelessWidget {
@@ -56,27 +57,8 @@ class MoviesPage extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomNavigationBar(
+        bottomNavigationBar: const CustomNavigationBar(
           backgroundColor: AppColors.Bottom_bar,
-          currentTabPosition: 3,
-          onDestinationSelected: (index) {
-            switch (index) {
-              case 0:
-                Navigator.pushReplacementNamed(context, AppRoutes.home);
-                break;
-              case 1:
-                Navigator.pushReplacementNamed(context, AppRoutes.comics);
-                break;
-              case 2:
-                Navigator.pushReplacementNamed(context, AppRoutes.series);
-                break;
-              case 3:
-                break;
-              case 4:
-                Navigator.pushReplacementNamed(context, AppRoutes.search);
-                break;
-            }
-          },
         ),
       ),
     );
@@ -85,11 +67,12 @@ class MoviesPage extends StatelessWidget {
   Widget _buildMovieCard(Map<String, dynamic> movie, int index, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailPage(media: movie, mediaType: "Movie"),
-          ),
+        context.push(
+          AppRoutes.detail,
+          extra: {
+            'media': movie,
+            'mediaType': 'Movie',
+          },
         );
       },
       child: Stack(

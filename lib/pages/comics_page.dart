@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wikiwomics/bloc/Comics_bloc/comics_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/res/app_colors.dart';
-import 'package:wikiwomics/pages/detail_page.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
-import '../app_routes.dart';
 
 class ComicsPage extends StatelessWidget {
   const ComicsPage({super.key});
@@ -56,27 +55,8 @@ class ComicsPage extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomNavigationBar(
+        bottomNavigationBar: const CustomNavigationBar(
           backgroundColor: AppColors.Bottom_bar,
-          currentTabPosition: 1,
-          onDestinationSelected: (index) {
-            switch (index) {
-              case 0:
-                Navigator.pushReplacementNamed(context, AppRoutes.home);
-                break;
-              case 1:
-                break;
-              case 2:
-                Navigator.pushReplacementNamed(context, AppRoutes.series);
-                break;
-              case 3:
-                Navigator.pushReplacementNamed(context, AppRoutes.movies);
-                break;
-              case 4:
-                Navigator.pushReplacementNamed(context, AppRoutes.search);
-                break;
-            }
-          },
         ),
       ),
     );
@@ -85,11 +65,12 @@ class ComicsPage extends StatelessWidget {
   Widget _buildComicCard(Map<String, dynamic> comic, int index, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailPage(media: comic, mediaType: "Comic"),
-          ),
+        context.push(
+          '/detail',
+          extra: {
+            'media': comic,
+            'mediaType': 'Comic',
+          },
         );
       },
       child: Stack(
@@ -104,6 +85,7 @@ class ComicsPage extends StatelessWidget {
             ),
             child: Row(
               children: [
+                // Image d'aperçu du comic
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
                   child: Image.network(
@@ -124,9 +106,9 @@ class ComicsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Titre du volume.
+                      // Titre du volume
                       Text(
-                        comic['volume_title'],
+                        comic['volume_title'] ?? 'Titre inconnu',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -135,9 +117,11 @@ class ComicsPage extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      // Sous-titre : titre de l'issue.
+                      // Sous-titre avec le titre de l'épisode
                       Text(
-                        comic['issue_title'] != "" ? comic['issue_title'] : "Titre de l'épisode non renseigné",
+                        comic['issue_title']?.isNotEmpty == true
+                            ? comic['issue_title']
+                            : "Titre de l'épisode non renseigné",
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -145,10 +129,12 @@ class ComicsPage extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
+                      // Numéro de l'édition
                       _buildInfoRow(
                         AppVectorialImages.icTvBicolor,
                         "Édition : ${comic['issue_number']}",
                       ),
+                      // Date de sortie
                       _buildInfoRow(
                         AppVectorialImages.icCalendarBicolor,
                         comic['releaseDate'],
@@ -159,6 +145,7 @@ class ComicsPage extends StatelessWidget {
               ],
             ),
           ),
+          // Affichage du numéro du comic dans un badge positionné
           Positioned(
             top: 8,
             left: 8,
@@ -169,7 +156,7 @@ class ComicsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(
-                "#${index + 1}",
+                "#${index + 1}", // Numérotation des comics
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -206,5 +193,4 @@ class ComicsPage extends StatelessWidget {
       ],
     );
   }
-
 }
