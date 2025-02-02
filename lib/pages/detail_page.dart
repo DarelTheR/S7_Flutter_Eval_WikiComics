@@ -1,14 +1,17 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:wikiwomics/bloc/Detail_bloc/detail_bloc.dart';
 import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/res/app_vectorial_images.dart';
 
 class DetailPage extends StatelessWidget {
   final Map<String, dynamic> media;
-  final String mediaType; // "Comic", "Movie", "Serie", "Character"
+  final String mediaType;
 
   const DetailPage({
     Key? key,
@@ -47,17 +50,45 @@ class DetailPage extends StatelessWidget {
   /// - Comic : numéro d'édition (issue_number)
   String _buildMediaSpecificInfo(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
-      final runtime = details['runtime'] != null ? "${details['runtime']} minutes" : "Durée inconnue";
+      final runtime = details['runtime'] != null
+          ? "${details['runtime']} minutes"
+          : "Durée inconnue";
       return "Durée : $runtime";
     } else if (mediaType == "Serie") {
       final episodesCount = details['count_of_episodes'] ??
-          (details['episodes'] is List ? details['episodes'].length : "Inconnu");
+          (details['episodes'] is List
+              ? details['episodes'].length
+              : "Inconnu");
       return "$episodesCount épisodes";
     } else if (mediaType == "Comic") {
       final issueNumber = details['issue_number'] ?? "Inconnu";
       return "Édition : #$issueNumber";
     }
     return "";
+  }
+
+  /// Fonction utilitaire pour récupérer l'URL de l'image à partir d'un URL de détail.
+  Future<String> _fetchImage(String apiDetailUrl) async {
+    const fallbackUrl = "https://via.placeholder.com/50";
+    const apiKey =
+        "9423cc1c26178968a90ee233468fd390fd839876"; // Remplacez par votre clé API
+    try {
+      final url = "$apiDetailUrl?api_key=$apiKey&format=json";
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final imageData = data['results']?['image'];
+        if (imageData != null) {
+          return imageData['medium_url'] ??
+              imageData['original_url'] ??
+              imageData['small_url'] ??
+              fallbackUrl;
+        }
+      }
+    } catch (e) {
+      // Vous pouvez ajouter une journalisation ici si nécessaire.
+    }
+    return fallbackUrl;
   }
 
   @override
@@ -70,7 +101,6 @@ class DetailPage extends StatelessWidget {
           builder: (context, state) {
             if (state is DetailLoaded) {
               final details = state.media;
-              // Si le mediaType est "Character", on utilise le layout spécifique pour les personnages.
               if (mediaType == "Character") {
                 return _buildCharacterContent(context, details);
               } else {
@@ -85,7 +115,8 @@ class DetailPage extends StatelessWidget {
   }
 
   /// Layout par défaut pour Comic, Serie, Movie.
-  Widget _buildDefaultContent(BuildContext context, Map<String, dynamic> details) {
+  Widget _buildDefaultContent(
+      BuildContext context, Map<String, dynamic> details) {
     final mainImageUrl = _getImageUrl(details);
     return Stack(
       children: [
@@ -125,7 +156,8 @@ class DetailPage extends StatelessWidget {
                         height: 180,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 120, color: Colors.white),
+                            const Icon(Icons.broken_image,
+                                size: 120, color: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -133,31 +165,40 @@ class DetailPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Pour les comics, on affiche le titre du volume et en sous-titre le titre de l'issue.
                           Text(
                             mediaType == "Comic"
-                                ? (details['volume'] != null && details['volume']['name'] != null
+                                ? (details['volume'] != null &&
+                                        details['volume']['name'] != null
                                     ? details['volume']['name']
                                     : "Titre inconnu")
                                 : _getTitle(details),
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           if (mediaType == "Comic")
                             Text(
-                              details['issue_title'] != null && details['issue_title'].toString().isNotEmpty
+                              details['issue_title'] != null &&
+                                      details['issue_title']
+                                          .toString()
+                                          .isNotEmpty
                                   ? details['issue_title']
                                   : "Titre d'issue non renseigné",
-                              style: const TextStyle(fontSize: 16, color: Colors.white70),
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.white70),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           const SizedBox(height: 8),
-                          _buildInfoRow(AppVectorialImages.icCalendarBicolor, _getReleaseDate(details)),
+                          _buildInfoRow(AppVectorialImages.icCalendarBicolor,
+                              _getReleaseDate(details)),
                           const SizedBox(height: 8),
-                          _buildInfoRow(AppVectorialImages.icTvBicolor, _buildMediaSpecificInfo(details)),
+                          _buildInfoRow(AppVectorialImages.icTvBicolor,
+                              _buildMediaSpecificInfo(details)),
                         ],
                       ),
                     ),
@@ -202,14 +243,16 @@ class DetailPage extends StatelessWidget {
                               topRight: Radius.circular(16),
                             ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                           child: TabBarView(
                             children: mediaType == "Comic"
                                 ? [
-                                    // Onglet "Histoire" pour comics.
                                     SingleChildScrollView(
                                       child: Html(
-                                        data: cleanHtml(details['description'] ?? "<p>Aucune histoire disponible.</p>"),
+                                        data: cleanHtml(details[
+                                                'description'] ??
+                                            "<p>Aucune histoire disponible.</p>"),
                                         style: {
                                           "body": Style(
                                             color: Colors.white,
@@ -217,22 +260,21 @@ class DetailPage extends StatelessWidget {
                                             lineHeight: LineHeight(1.5),
                                           ),
                                           "img": Style(
-                                            display: Display.none, // Cache toutes les images
+                                            display: Display.none,
                                           ),
                                         },
                                       ),
                                     ),
-                                    // Onglet "Auteurs" pour comics.s
                                     _buildComicAuthorsTab(details),
-                                    // Onglet "Personnages" pour comics.
                                     _buildComicCharactersTab(details),
                                   ]
                                 : mediaType == "Serie"
                                     ? [
-                                        // Pour les séries.
                                         SingleChildScrollView(
                                           child: Html(
-                                            data: cleanHtml(details['description'] ?? "<p>Aucune histoire disponible.</p>"),
+                                            data: cleanHtml(details[
+                                                    'description'] ??
+                                                "<p>Aucune histoire disponible.</p>"),
                                             style: {
                                               "body": Style(
                                                 color: Colors.white,
@@ -240,7 +282,7 @@ class DetailPage extends StatelessWidget {
                                                 lineHeight: LineHeight(1.5),
                                               ),
                                               "img": Style(
-                                                display: Display.none, // Cache toutes les images
+                                                display: Display.none,
                                               ),
                                             },
                                           ),
@@ -249,10 +291,11 @@ class DetailPage extends StatelessWidget {
                                         _buildEpisodesTab(details),
                                       ]
                                     : [
-                                        // Pour les films et autres.
                                         SingleChildScrollView(
                                           child: Html(
-                                            data: cleanHtml(details['description'] ?? "<p>Aucun synopsis disponible.</p>"),
+                                            data: cleanHtml(details[
+                                                    'description'] ??
+                                                "<p>Aucun synopsis disponible.</p>"),
                                             style: {
                                               "body": Style(
                                                 color: Colors.white,
@@ -260,9 +303,9 @@ class DetailPage extends StatelessWidget {
                                                 lineHeight: LineHeight(1.5),
                                               ),
                                               "img": Style(
-                                                  display: Display.none, // Cache toutes les images
-                                                ),
-                                              },
+                                                display: Display.none,
+                                              ),
+                                            },
                                           ),
                                         ),
                                         _buildCharactersTab(details),
@@ -283,7 +326,8 @@ class DetailPage extends StatelessWidget {
   }
 
   /// Layout spécifique pour les personnages (mediaType == "Character").
-  Widget _buildCharacterContent(BuildContext context, Map<String, dynamic> details) {
+  Widget _buildCharacterContent(
+      BuildContext context, Map<String, dynamic> details) {
     final mainImageUrl = _getImageUrl(details);
     return Stack(
       children: [
@@ -323,7 +367,8 @@ class DetailPage extends StatelessWidget {
                         height: 180,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 120, color: Colors.white),
+                            const Icon(Icons.broken_image,
+                                size: 120, color: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -333,19 +378,24 @@ class DetailPage extends StatelessWidget {
                         children: [
                           Text(
                             _getTitle(details),
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             "Alias: " + (details['aliases'] ?? "Aucun alias"),
-                            style: const TextStyle(fontSize: 16, color: Colors.white70),
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.white70),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
-                          _buildInfoRow(AppVectorialImages.icCalendarBicolor, "Naissance: " + (details['birth'] ?? "Inconnu")),
+                          _buildInfoRow(AppVectorialImages.icCalendarBicolor,
+                              "Naissance: " + (details['birth'] ?? "Inconnu")),
                         ],
                       ),
                     ),
@@ -355,7 +405,7 @@ class DetailPage extends StatelessWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: DefaultTabController(
-                  length: 2, // Deux onglets pour Character.
+                  length: 2,
                   child: Column(
                     children: [
                       const TabBar(
@@ -377,14 +427,19 @@ class DetailPage extends StatelessWidget {
                               topRight: Radius.circular(16),
                             ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                           child: TabBarView(
                             children: [
                               SingleChildScrollView(
                                 child: Html(
-                                  data: cleanHtml(details['description'] ?? "<p>Aucune description disponible.</p>"),
+                                  data: cleanHtml(details['description'] ??
+                                      "<p>Aucune description disponible.</p>"),
                                   style: {
-                                    "body": Style(color: Colors.white, fontSize: FontSize(16.0), lineHeight: LineHeight(1.5)),
+                                    "body": Style(
+                                        color: Colors.white,
+                                        fontSize: FontSize(16.0),
+                                        lineHeight: LineHeight(1.5)),
                                   },
                                 ),
                               ),
@@ -424,27 +479,38 @@ class DetailPage extends StatelessWidget {
   Widget _buildCharactersTab(Map<String, dynamic> details) {
     final characters = details['characters'] as List? ?? [];
     if (characters.isEmpty) {
-      return const Center(child: Text("Aucun personnage disponible.", style: TextStyle(color: Colors.white)));
+      return const Center(
+          child: Text("Aucun personnage disponible.",
+              style: TextStyle(color: Colors.white)));
     }
     return ListView.builder(
       itemCount: characters.length,
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        final imageUrl = character['image']?['medium_url'] ?? 'https://via.placeholder.com/50';
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(40.0),
-            child: Image.network(
-              imageUrl,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-          ),
-          title: Text(characterName, style: const TextStyle(color: Colors.white)),
+        final apiDetailUrl = character['api_detail_url'];
+        return FutureBuilder<String>(
+          future: apiDetailUrl != null
+              ? _fetchImage(apiDetailUrl)
+              : Future.value('https://via.placeholder.com/50'),
+          builder: (context, snapshot) {
+            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
+            return ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(40.0),
+                child: Image.network(
+                  imageUrl,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.person, size: 50, color: Colors.white),
+                ),
+              ),
+              title: Text(characterName,
+                  style: const TextStyle(color: Colors.white)),
+            );
+          },
         );
       },
     );
@@ -453,35 +519,45 @@ class DetailPage extends StatelessWidget {
   /// Pour les films, affiche des infos complémentaires.
   Widget _buildInfosTab(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
-      // On récupère ou on affiche "Non renseigné" si la donnée n'existe pas.
       String classification = details['rating'] ?? "Non renseigné";
-      // Le champ 'director' n’est pas toujours présent dans la réponse.
       String director = details['director'] ?? "Non renseigné";
-      
+
       String scenaristes = "Non renseigné";
-      if (details['writers'] != null && details['writers'] is List && (details['writers'] as List).isNotEmpty) {
+      if (details['writers'] != null &&
+          details['writers'] is List &&
+          (details['writers'] as List).isNotEmpty) {
         scenaristes = (details['writers'] as List)
             .map((writer) => writer['name'])
             .join(', ');
       }
-      
+
       String producteurs = "Non renseigné";
-      if (details['producers'] != null && details['producers'] is List && (details['producers'] as List).isNotEmpty) {
+      if (details['producers'] != null &&
+          details['producers'] is List &&
+          (details['producers'] as List).isNotEmpty) {
         producteurs = (details['producers'] as List)
             .map((producer) => producer['name'])
             .join(', ');
       }
-      
+
       String studios = "Non renseigné";
-      if (details['studios'] != null && details['studios'] is List && (details['studios'] as List).isNotEmpty) {
+      if (details['studios'] != null &&
+          details['studios'] is List &&
+          (details['studios'] as List).isNotEmpty) {
         studios = (details['studios'] as List)
             .map((studio) => studio['name'])
             .join(', ');
       }
-      
-      String budget = details['budget'] != null ? "${formatNumberWithSpaces(details['budget'])} \$" : "Non renseigné";
-      String recettesBoxOffice = details['box_office_revenue'] != null ? "${formatNumberWithSpaces(details['box_office_revenue'])} \$" : "Non renseigné";
-      String recettesTotales = details['total_revenue'] != null ? "${formatNumberWithSpaces(details['total_revenue'])} \$" : "Non renseigné";
+
+      String budget = details['budget'] != null
+          ? "${formatNumberWithSpaces(details['budget'])} \$"
+          : "Non renseigné";
+      String recettesBoxOffice = details['box_office_revenue'] != null
+          ? "${formatNumberWithSpaces(details['box_office_revenue'])} \$"
+          : "Non renseigné";
+      String recettesTotales = details['total_revenue'] != null
+          ? "${formatNumberWithSpaces(details['total_revenue'])} \$"
+          : "Non renseigné";
 
       return ListView(
         padding: const EdgeInsets.all(16.0),
@@ -505,7 +581,9 @@ class DetailPage extends StatelessWidget {
   Widget _buildEpisodesTab(Map<String, dynamic> details) {
     final episodes = details['episodes'] as List? ?? [];
     if (episodes.isEmpty) {
-      return const Center(child: Text("Aucun épisode disponible.", style: TextStyle(color: Colors.white)));
+      return const Center(
+          child: Text("Aucun épisode disponible.",
+              style: TextStyle(color: Colors.white)));
     }
     return ListView.builder(
       itemCount: episodes.length,
@@ -514,7 +592,8 @@ class DetailPage extends StatelessWidget {
         final episodeName = episode['name'] ?? "Épisode inconnu";
         final episodeNumberDisplay = "Épisode ${index + 1}";
         return ListTile(
-          title: Text("$episodeNumberDisplay - $episodeName", style: const TextStyle(color: Colors.white)),
+          title: Text("$episodeNumberDisplay - $episodeName",
+              style: const TextStyle(color: Colors.white)),
         );
       },
     );
@@ -524,40 +603,53 @@ class DetailPage extends StatelessWidget {
   Widget _infoItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text("$label : $value", style: const TextStyle(color: Colors.white, fontSize: 16.0)),
+      child: Text("$label : $value",
+          style: const TextStyle(color: Colors.white, fontSize: 16.0)),
     );
   }
 
-  // Widgets spécifiques pour les comics.
+  String formatNumberWithSpaces(String number) {
+    return number.replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+$)'), (Match m) => '${m[1]} ');
+  }
+
   Widget _buildComicAuthorsTab(Map<String, dynamic> details) {
     final authors = details['person_credits'] as List? ?? [];
     if (authors.isEmpty) {
-      return const Center(child: Text("Aucun auteur disponible.", style: TextStyle(color: Colors.white70)));
+      return const Center(
+          child: Text("Aucun auteur disponible.",
+              style: TextStyle(color: Colors.white70)));
     }
     return ListView.builder(
       itemCount: authors.length,
       itemBuilder: (context, index) {
         final author = authors[index];
         final authorName = author['name'] ?? "Nom inconnu";
-        final imageUrl = (author['image'] != null &&
-                author['image'] is Map &&
-                author['image']['medium_url'] != null)
-            ? author['image']['medium_url']
-            : 'https://via.placeholder.com/50';
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(40.0),
-            child: Image.network(
-              imageUrl,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-          ),
-          title: Text(authorName, style: const TextStyle(color: Colors.white)),
-          subtitle: Text(author['role'] ?? "", style: const TextStyle(color: Colors.white70)),
+        final apiDetailUrl = author['api_detail_url'];
+        return FutureBuilder<String>(
+          future: apiDetailUrl != null
+              ? _fetchImage(apiDetailUrl)
+              : Future.value('https://via.placeholder.com/50'),
+          builder: (context, snapshot) {
+            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
+            return ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(40.0),
+                child: Image.network(
+                  imageUrl,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.person, size: 50, color: Colors.white),
+                ),
+              ),
+              title:
+                  Text(authorName, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(author['role'] ?? "",
+                  style: const TextStyle(color: Colors.white70)),
+            );
+          },
         );
       },
     );
@@ -566,33 +658,43 @@ class DetailPage extends StatelessWidget {
   Widget _buildComicCharactersTab(Map<String, dynamic> details) {
     final characters = details['character_credits'] as List? ?? [];
     if (characters.isEmpty) {
-      return const Center(child: Text("Aucun personnage disponible.", style: TextStyle(color: Colors.white)));
+      return const Center(
+          child: Text("Aucun personnage disponible.",
+              style: TextStyle(color: Colors.white)));
     }
     return ListView.builder(
       itemCount: characters.length,
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        final imageUrl = character['image']?['medium_url'] ?? 'https://via.placeholder.com/50';
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(40.0),
-            child: Image.network(
-              imageUrl,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-          ),
-          title: Text(characterName, style: const TextStyle(color: Colors.white)),
+        final apiDetailUrl = character['api_detail_url'];
+        return FutureBuilder<String>(
+          future: apiDetailUrl != null
+              ? _fetchImage(apiDetailUrl)
+              : Future.value('https://via.placeholder.com/50'),
+          builder: (context, snapshot) {
+            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
+            return ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(40.0),
+                child: Image.network(
+                  imageUrl,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.person, size: 50, color: Colors.white),
+                ),
+              ),
+              title: Text(characterName,
+                  style: const TextStyle(color: Colors.white)),
+            );
+          },
         );
       },
     );
   }
 
-  // Widgets spécifiques pour les personnages (mediaType == "Character").
   Widget _buildCharacterInfosTab(Map<String, dynamic> details) {
     String superheroName = details['name'] ?? "Inconnu";
     String realName = details['real_name'] ?? "Inconnu";
@@ -626,7 +728,9 @@ class DetailPage extends StatelessWidget {
   Widget _buildCharacterEnemiesTab(Map<String, dynamic> details) {
     final enemies = details['character_enemies'] as List? ?? [];
     if (enemies.isEmpty) {
-      return const Center(child: Text("Aucun ennemi disponible.", style: TextStyle(color: Colors.white)));
+      return const Center(
+          child: Text("Aucun ennemi disponible.",
+              style: TextStyle(color: Colors.white)));
     }
     return ListView.builder(
       itemCount: enemies.length,
@@ -656,9 +760,5 @@ class DetailPage extends StatelessWidget {
       RegExp(r'<img[^>]+src="([^">]+)"[^>]*>'),
       (match) => '<img src="${match.group(1)}" />',
     );
-  }
-
-  String formatNumberWithSpaces(String number) {
-    return number.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (Match m) => '${m[1]} ');
   }
 }

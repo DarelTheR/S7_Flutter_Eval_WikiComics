@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wikiwomics/bloc/Home_bloc/home_bloc.dart';
-import 'package:wikiwomics/res/app_colors.dart';
 import 'package:wikiwomics/app_routes.dart';
-import 'package:wikiwomics/res/app_vectorial_images.dart';
+import 'package:wikiwomics/bloc/Home_bloc/home_bloc.dart';
 import 'package:wikiwomics/components/customNavigationBar.dart';
 import 'package:wikiwomics/components/media_card.dart';
+import 'package:wikiwomics/res/app_colors.dart';
+import 'package:wikiwomics/res/app_vectorial_images.dart';
+
 import 'detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,7 +19,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -55,10 +55,14 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    _buildSectionWithMore("Séries populaires", state.series, "Serie", AppRoutes.series),
-                    _buildSectionWithMore("Comics populaires", state.comics, "Comic", AppRoutes.comics),
-                    _buildSectionWithMore("Films populaires", state.movies, "Movie", AppRoutes.movies),
-                    _buildSectionWithoutMore("Personnages", state.characters, "Character"),
+                    _buildSectionWithMore("Séries populaires", state.series,
+                        "Serie", AppRoutes.series),
+                    _buildSectionWithMore("Comics populaires", state.comics,
+                        "Comic", AppRoutes.comics),
+                    _buildSectionWithMore("Films populaires", state.movies,
+                        "Movie", AppRoutes.movies),
+                    _buildSectionWithoutMore(
+                        "Personnages", state.characters, "Character"),
                   ],
                 ),
               );
@@ -80,7 +84,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHorizontalList(List<Map<String, dynamic>> items, String mediaType) {
+  Widget _buildHorizontalList(
+      List<Map<String, dynamic>> items, String mediaType) {
     if (items.isEmpty) {
       return const SizedBox(
         height: 250,
@@ -121,8 +126,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionWithMore(
-      String title, List<Map<String, dynamic>> items, String mediaType, String route) {
+  Widget _buildSectionWithMore(String title, List<Map<String, dynamic>> items,
+      String mediaType, String route) {
     return Container(
       margin: const EdgeInsets.only(bottom: 32.0),
       padding: const EdgeInsets.all(16.0),
@@ -152,7 +157,6 @@ class _HomePageState extends State<HomePage> {
               ),
               GestureDetector(
                 onTap: () {
-                  // Vérifie que la route existe
                   context.push(route);
                 },
                 child: const Text(
@@ -161,8 +165,7 @@ class _HomePageState extends State<HomePage> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      fontFamily: 'Nunito'
-                  ),
+                      fontFamily: 'Nunito'),
                 ),
               ),
             ],
@@ -172,10 +175,10 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-
   }
 
-  Widget _buildSectionWithoutMore(String title, List<Map<String, dynamic>> items, String mediaType) {
+  Widget _buildSectionWithoutMore(
+      String title, List<Map<String, dynamic>> items, String mediaType) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
