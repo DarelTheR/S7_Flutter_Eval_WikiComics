@@ -1,4 +1,3 @@
-// lib/pages/search_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -103,7 +102,7 @@ class SearchPage extends StatelessWidget {
                             _buildSection("Séries", state.seriesResults),
                             _buildSection("Comics", state.comicsResults),
                             _buildSection("Films", state.moviesResults),
-                            _buildSection("Personnage", state.charactersResults),
+                            _buildSection("Personnages", state.charactersResults),
                           ],
                         ),
                       );
@@ -131,35 +130,47 @@ class SearchPage extends StatelessWidget {
   }
 
   Widget _buildSection(String title, List<Map<String, dynamic>> results) {
-    return results.isEmpty
-        ? const SizedBox.shrink()
-        : Container(
-            margin: const EdgeInsets.only(bottom: 32.0),
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: AppColors.Section_1E3243,
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.circle, size: 8, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 20,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 32.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: AppColors.Section_1E3243,
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.circle, size: 8, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          results.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Aucun résultat trouvé",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
+                  ),
+                )
+              : SizedBox(
                   height: 250,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -176,7 +187,7 @@ class SearchPage extends StatelessWidget {
                         case "Films":
                           mediaType = "Movie";
                           break;
-                        case "Personnage":
+                        case "Personnages":
                           mediaType = "Character";
                           break;
                       }
@@ -200,9 +211,9 @@ class SearchPage extends StatelessWidget {
                     },
                   ),
                 ),
-              ],
-            ),
-          );
+        ],
+      ),
+    );
   }
 
   Widget _buildInitialMessage() {

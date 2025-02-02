@@ -1,4 +1,3 @@
-// lib/pages/comics_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -39,7 +38,7 @@ class ComicsPage extends StatelessWidget {
                     } else if (state is ComicsLoaded) {
                       return ListView.builder(
                         padding: const EdgeInsets.all(16.0),
-                        itemCount: state.comics.length,
+                        itemCount: state.comics.length > 50 ? 50 : state.comics.length, //limite a 50
                         itemBuilder: (context, index) {
                           final comic = state.comics[index];
                           return _buildComicCard(comic, index, context);

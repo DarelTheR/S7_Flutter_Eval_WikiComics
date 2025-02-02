@@ -1,4 +1,3 @@
-// lib/pages/series_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -41,7 +40,7 @@ class SeriesPage extends StatelessWidget {
                     } else if (state is SeriesLoaded) {
                       return ListView.builder(
                         padding: const EdgeInsets.all(16.0),
-                        itemCount: state.series.length,
+                        itemCount: state.series.length > 50 ? 50 : state.series.length, // limite a 50
                         itemBuilder: (context, index) {
                           final series = state.series[index];
                           return _buildSeriesCard(series, index, context);

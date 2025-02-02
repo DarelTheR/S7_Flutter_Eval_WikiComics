@@ -1,4 +1,3 @@
-// lib/pages/movies_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -41,7 +40,7 @@ class MoviesPage extends StatelessWidget {
                     } else if (state is MoviesLoaded) {
                       return ListView.builder(
                         padding: const EdgeInsets.all(16.0),
-                        itemCount: state.movies.length,
+                        itemCount: state.movies.length > 50 ? 50 : state.movies.length, // on limite a 50
                         itemBuilder: (context, index) {
                           final movie = state.movies[index];
                           return _buildMovieCard(movie, index, context);

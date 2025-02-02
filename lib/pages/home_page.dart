@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
       height: 250,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: items.length,
+        itemCount: items.length > 5 ? 5 : items.length, // on limite à 5
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
