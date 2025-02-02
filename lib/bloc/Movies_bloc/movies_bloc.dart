@@ -23,7 +23,7 @@ class MoviesBloc extends Bloc<MoviesEvent, MoviesState> {
         final data = jsonDecode(response.body);
         final movies = (data['results'] as List).map((item) {
           return {
-            "id": item["id"], // Important pour la requête de détail
+            "id": item["id"],
             "title": item["name"] ?? "Titre inconnu",
             "releaseDate": item["release_date"] != null
                 ? DateTime.tryParse(item["release_date"])?.year.toString() ??

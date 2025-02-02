@@ -1,4 +1,3 @@
-// lib/bloc/series_state.dart
 part of 'series_bloc.dart';
 
 abstract class SeriesState extends Equatable {

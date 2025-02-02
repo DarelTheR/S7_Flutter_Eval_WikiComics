@@ -49,7 +49,6 @@ class RankingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Titre
                 Text(
                   title,
                   style: const TextStyle(
@@ -61,8 +60,6 @@ class RankingCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4.0),
-
-                // Infos supplémentaires
                 ...additionalInfo,
               ],
             ),

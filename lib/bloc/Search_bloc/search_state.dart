@@ -1,4 +1,3 @@
-// lib/bloc/search_state.dart
 part of 'search_bloc.dart';
 
 abstract class SearchState extends Equatable {

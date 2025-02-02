@@ -1,4 +1,3 @@
-// lib/app_routes.dart
 class AppRoutes {
   static const String home = '/home';
   static const String series = '/series';

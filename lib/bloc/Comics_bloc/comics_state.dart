@@ -1,4 +1,3 @@
-// lib/bloc/comics_state.dart
 part of 'comics_bloc.dart';
 
 abstract class ComicsState extends Equatable {

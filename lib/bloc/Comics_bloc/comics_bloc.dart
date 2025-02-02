@@ -1,5 +1,3 @@
-// lib/bloc/comics_bloc/comics_bloc.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:http/http.dart' as http;
@@ -25,11 +23,9 @@ class ComicsBloc extends Bloc<ComicsEvent, ComicsState> {
         final data = jsonDecode(response.body);
         final comics = (data['results'] as List).map((item) {
           return {
-            "id": item["id"], // indispensable pour DetailBloc
-            // Titre du volume
+            "id": item["id"],
             "volume_title": item["volume"]?["name"] ?? "Titre inconnu",
-            // Titre de l'issue (peut être vide)
-            "issue_title": item["name"] ?? "",
+            "issue_title": item["name"] ?? "", // Titre de l'issue (peut être vide)
             "issue_number": item["issue_number"] ?? "Inconnu",
             "releaseDate": item["cover_date"] ?? "Date inconnue",
             "imageUrl": item["image"]?["medium_url"] ?? "https://via.placeholder.com/150",

@@ -1,4 +1,3 @@
-// lib/bloc/movies_state.dart
 part of 'movies_bloc.dart';
 
 abstract class MoviesState extends Equatable {

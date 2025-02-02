@@ -1,4 +1,3 @@
-// lib/bloc/series_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:http/http.dart' as http;
@@ -24,7 +23,7 @@ class SeriesBloc extends Bloc<SeriesEvent, SeriesState> {
         final data = jsonDecode(response.body);
         final series = (data['results'] as List).map((item) {
           return {
-            "id": item["id"], // Ajout de l'identifiant, indispensable pour la requête de détail
+            "id": item["id"],
             "title": item["name"] ?? "Titre inconnu",
             "studio": item["publisher"]?["name"] ?? "Studio inconnu",
             "episodes": item["count_of_episodes"] ?? 0,
