@@ -19,7 +19,6 @@ class DetailPage extends StatelessWidget {
     required this.mediaType,
   }) : super(key: key);
 
-  /// Retourne l'URL de l'image principale en consultant la map "image".
   String _getImageUrl(Map<String, dynamic> details) {
     if (details['image'] != null &&
         details['image'] is Map &&
@@ -29,12 +28,10 @@ class DetailPage extends StatelessWidget {
     return "https://via.placeholder.com/150";
   }
 
-  /// Retourne le titre (clé "name").
   String _getTitle(Map<String, dynamic> details) {
     return details['name'] ?? "Titre inconnu";
   }
 
-  /// Retourne la date selon le type de média.
   String _getReleaseDate(Map<String, dynamic> details) {
     if (mediaType == "Serie") {
       return details['start_year'] ?? "Année inconnue";
@@ -44,10 +41,6 @@ class DetailPage extends StatelessWidget {
     return details['release_date'] ?? "Date inconnue";
   }
 
-  /// Retourne une info spécifique selon le type.
-  /// - Movie : durée (runtime)
-  /// - Serie : nombre d'épisodes
-  /// - Comic : numéro d'édition (issue_number)
   String _buildMediaSpecificInfo(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
       final runtime = details['runtime'] != null
@@ -67,27 +60,31 @@ class DetailPage extends StatelessWidget {
     return "";
   }
 
-  /// Fonction utilitaire pour récupérer l'URL de l'image à partir d'un URL de détail.
   Future<String> _fetchImage(String apiDetailUrl) async {
     const fallbackUrl = "https://via.placeholder.com/50";
-    const apiKey =
-        "9423cc1c26178968a90ee233468fd390fd839876"; // Remplacez par votre clé API
+    const apiKey = "9423cc1c26178968a90ee233468fd390fd839876";
     try {
-      final url = "$apiDetailUrl?api_key=$apiKey&format=json";
+      final secureUrl = apiDetailUrl.replaceFirst("http://", "https://");
+      final url = "$secureUrl?api_key=$apiKey&format=json";
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final imageData = data['results']?['image'];
-        if (imageData != null) {
-          return imageData['medium_url'] ??
-              imageData['original_url'] ??
-              imageData['small_url'] ??
-              fallbackUrl;
+        final results = data['results'];
+        if (results != null && results is Map) {
+          final imageData = results['image'];
+          if (imageData != null && imageData is Map) {
+            return imageData['medium_url'] ??
+                imageData['original_url'] ??
+                imageData['small_url'] ??
+                fallbackUrl;
+          }
+          if (results.containsKey('image_url') &&
+              results['image_url'] != null) {
+            return results['image_url'];
+          }
         }
       }
-    } catch (e) {
-      // Vous pouvez ajouter une journalisation ici si nécessaire.
-    }
+    } catch (e) {}
     return fallbackUrl;
   }
 
@@ -96,7 +93,7 @@ class DetailPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => DetailBloc()..add(LoadDetail(media, mediaType)),
       child: Scaffold(
-        backgroundColor: AppColors.Section_1E3243,
+        backgroundColor: AppColors.Background,
         body: BlocBuilder<DetailBloc, DetailState>(
           builder: (context, state) {
             if (state is DetailLoaded) {
@@ -114,7 +111,6 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Layout par défaut pour Comic, Serie, Movie.
   Widget _buildDefaultContent(
       BuildContext context, Map<String, dynamic> details) {
     final mainImageUrl = _getImageUrl(details);
@@ -220,28 +216,27 @@ class DetailPage extends StatelessWidget {
                             ? const [
                                 Tab(text: "Histoire"),
                                 Tab(text: "Auteurs"),
-                                Tab(text: "Personnages"),
+                                Tab(text: "Personnages")
                               ]
                             : mediaType == "Serie"
                                 ? const [
                                     Tab(text: "Histoire"),
                                     Tab(text: "Personnages"),
-                                    Tab(text: "Episodes"),
+                                    Tab(text: "Episodes")
                                   ]
                                 : const [
                                     Tab(text: "Synopsis"),
                                     Tab(text: "Personnages"),
-                                    Tab(text: "Infos"),
+                                    Tab(text: "Infos")
                                   ],
                       ),
                       Expanded(
                         child: Container(
                           decoration: const BoxDecoration(
-                            color: AppColors.Section_1E3243,
+                            color: AppColors.Background,
                             borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16)),
                           ),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
@@ -249,65 +244,52 @@ class DetailPage extends StatelessWidget {
                             children: mediaType == "Comic"
                                 ? [
                                     SingleChildScrollView(
-                                      child: Html(
-                                        data: cleanHtml(details[
-                                                'description'] ??
-                                            "<p>Aucune histoire disponible.</p>"),
-                                        style: {
+                                        child: Html(
+                                            data: cleanHtml(details[
+                                                    'description'] ??
+                                                "<p>Aucune histoire disponible.</p>"),
+                                            style: {
                                           "body": Style(
-                                            color: Colors.white,
-                                            fontSize: FontSize(16.0),
-                                            lineHeight: LineHeight(1.5),
-                                          ),
-                                          "img": Style(
-                                            display: Display.none,
-                                          ),
-                                        },
-                                      ),
-                                    ),
+                                              color: Colors.white,
+                                              fontSize: FontSize(16.0),
+                                              lineHeight: LineHeight(1.5)),
+                                          "img": Style(display: Display.none)
+                                        })),
                                     _buildComicAuthorsTab(details),
                                     _buildComicCharactersTab(details),
                                   ]
                                 : mediaType == "Serie"
                                     ? [
                                         SingleChildScrollView(
-                                          child: Html(
-                                            data: cleanHtml(details[
-                                                    'description'] ??
-                                                "<p>Aucune histoire disponible.</p>"),
-                                            style: {
+                                            child: Html(
+                                                data: cleanHtml(details[
+                                                        'description'] ??
+                                                    "<p>Aucune histoire disponible.</p>"),
+                                                style: {
                                               "body": Style(
-                                                color: Colors.white,
-                                                fontSize: FontSize(16.0),
-                                                lineHeight: LineHeight(1.5),
-                                              ),
-                                              "img": Style(
-                                                display: Display.none,
-                                              ),
-                                            },
-                                          ),
-                                        ),
+                                                  color: Colors.white,
+                                                  fontSize: FontSize(16.0),
+                                                  lineHeight: LineHeight(1.5)),
+                                              "img":
+                                                  Style(display: Display.none)
+                                            })),
                                         _buildCharactersTab(details),
                                         _buildEpisodesTab(details),
                                       ]
                                     : [
                                         SingleChildScrollView(
-                                          child: Html(
-                                            data: cleanHtml(details[
-                                                    'description'] ??
-                                                "<p>Aucun synopsis disponible.</p>"),
-                                            style: {
+                                            child: Html(
+                                                data: cleanHtml(details[
+                                                        'description'] ??
+                                                    "<p>Aucun synopsis disponible.</p>"),
+                                                style: {
                                               "body": Style(
-                                                color: Colors.white,
-                                                fontSize: FontSize(16.0),
-                                                lineHeight: LineHeight(1.5),
-                                              ),
-                                              "img": Style(
-                                                display: Display.none,
-                                              ),
-                                            },
-                                          ),
-                                        ),
+                                                  color: Colors.white,
+                                                  fontSize: FontSize(16.0),
+                                                  lineHeight: LineHeight(1.5)),
+                                              "img":
+                                                  Style(display: Display.none)
+                                            })),
                                         _buildCharactersTab(details),
                                         _buildInfosTab(details),
                                       ],
@@ -325,7 +307,6 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Layout spécifique pour les personnages (mediaType == "Character").
   Widget _buildCharacterContent(
       BuildContext context, Map<String, dynamic> details) {
     final mainImageUrl = _getImageUrl(details);
@@ -413,19 +394,15 @@ class DetailPage extends StatelessWidget {
                         labelColor: Colors.white,
                         unselectedLabelColor: Colors.white,
                         indicatorWeight: 2,
-                        tabs: [
-                          Tab(text: "Histoire"),
-                          Tab(text: "Infos"),
-                        ],
+                        tabs: [Tab(text: "Histoire"), Tab(text: "Infos")],
                       ),
                       Expanded(
                         child: Container(
                           decoration: const BoxDecoration(
                             color: AppColors.Section_1E3243,
                             borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16)),
                           ),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
@@ -433,15 +410,14 @@ class DetailPage extends StatelessWidget {
                             children: [
                               SingleChildScrollView(
                                 child: Html(
-                                  data: cleanHtml(details['description'] ??
-                                      "<p>Aucune description disponible.</p>"),
-                                  style: {
-                                    "body": Style(
-                                        color: Colors.white,
-                                        fontSize: FontSize(16.0),
-                                        lineHeight: LineHeight(1.5)),
-                                  },
-                                ),
+                                    data: cleanHtml(details['description'] ??
+                                        "<p>Aucune description disponible.</p>"),
+                                    style: {
+                                      "body": Style(
+                                          color: Colors.white,
+                                          fontSize: FontSize(16.0),
+                                          lineHeight: LineHeight(1.5))
+                                    }),
                               ),
                               _buildCharacterInfosTab(details),
                             ],
@@ -459,7 +435,6 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Widget utilitaire pour afficher une ligne d'information avec une icône.
   Widget _buildInfoRow(String iconPath, String info) {
     return Row(
       children: [
@@ -475,11 +450,10 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  /// Affiche la liste des personnages pour films et séries.
   Widget _buildCharactersTab(Map<String, dynamic> details) {
     final characters = details['characters'] as List? ?? [];
     if (characters.isEmpty) {
-      return const Center(
+      return Center(
           child: Text("Aucun personnage disponible.",
               style: TextStyle(color: Colors.white)));
     }
@@ -488,40 +462,70 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        final apiDetailUrl = character['api_detail_url'];
-        return FutureBuilder<String>(
-          future: apiDetailUrl != null
-              ? _fetchImage(apiDetailUrl)
-              : Future.value('https://via.placeholder.com/50'),
-          builder: (context, snapshot) {
-            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
-            return ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(40.0),
-                child: Image.network(
-                  imageUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.person, size: 50, color: Colors.white),
-                ),
+        if (character['image'] != null &&
+            character['image'] is Map &&
+            character['image']['medium_url'] != null) {
+          final imageUrl = character['image']['medium_url'];
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                imageUrl,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
               ),
-              title: Text(characterName,
-                  style: const TextStyle(color: Colors.white)),
-            );
-          },
-        );
+            ),
+            title: Text(characterName, style: TextStyle(color: Colors.white)),
+          );
+        } else if (character['api_detail_url'] != null) {
+          return FutureBuilder<String>(
+            future: _fetchImage(character['api_detail_url']),
+            builder: (context, snapshot) {
+              final url = snapshot.data ?? "https://via.placeholder.com/50";
+              return ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(40.0),
+                  child: Image.network(
+                    url,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.person, size: 50, color: Colors.white),
+                  ),
+                ),
+                title:
+                    Text(characterName, style: TextStyle(color: Colors.white)),
+              );
+            },
+          );
+        } else {
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                "https://via.placeholder.com/50",
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+            ),
+            title: Text(characterName, style: TextStyle(color: Colors.white)),
+          );
+        }
       },
     );
   }
 
-  /// Pour les films, affiche des infos complémentaires.
   Widget _buildInfosTab(Map<String, dynamic> details) {
     if (mediaType == "Movie") {
       String classification = details['rating'] ?? "Non renseigné";
       String director = details['director'] ?? "Non renseigné";
-
       String scenaristes = "Non renseigné";
       if (details['writers'] != null &&
           details['writers'] is List &&
@@ -530,7 +534,6 @@ class DetailPage extends StatelessWidget {
             .map((writer) => writer['name'])
             .join(', ');
       }
-
       String producteurs = "Non renseigné";
       if (details['producers'] != null &&
           details['producers'] is List &&
@@ -539,7 +542,6 @@ class DetailPage extends StatelessWidget {
             .map((producer) => producer['name'])
             .join(', ');
       }
-
       String studios = "Non renseigné";
       if (details['studios'] != null &&
           details['studios'] is List &&
@@ -548,7 +550,6 @@ class DetailPage extends StatelessWidget {
             .map((studio) => studio['name'])
             .join(', ');
       }
-
       String budget = details['budget'] != null
           ? "${formatNumberWithSpaces(details['budget'])} \$"
           : "Non renseigné";
@@ -558,7 +559,6 @@ class DetailPage extends StatelessWidget {
       String recettesTotales = details['total_revenue'] != null
           ? "${formatNumberWithSpaces(details['total_revenue'])} \$"
           : "Non renseigné";
-
       return ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -577,29 +577,57 @@ class DetailPage extends StatelessWidget {
     }
   }
 
-  /// Pour les séries, affiche la liste des épisodes.
   Widget _buildEpisodesTab(Map<String, dynamic> details) {
     final episodes = details['episodes'] as List? ?? [];
     if (episodes.isEmpty) {
-      return const Center(
+      return Center(
           child: Text("Aucun épisode disponible.",
               style: TextStyle(color: Colors.white)));
     }
+
     return ListView.builder(
       itemCount: episodes.length,
       itemBuilder: (context, index) {
         final episode = episodes[index];
         final episodeName = episode['name'] ?? "Épisode inconnu";
         final episodeNumberDisplay = "Épisode ${index + 1}";
-        return ListTile(
-          title: Text("$episodeNumberDisplay - $episodeName",
-              style: const TextStyle(color: Colors.white)),
+        final episodeImageUrl = (episode['image'] != null &&
+                episode['image'] is Map &&
+                episode['image']['medium_url'] != null)
+            ? episode['image']['medium_url']
+            : 'https://via.placeholder.com/50';
+
+        return Card(
+          color: AppColors.Section_1E3243,
+          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          child: Container(
+            height: 120,
+            padding: const EdgeInsets.all(12.0),
+            child: ListTile(
+              leading: SizedBox(
+                width: 80,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(
+                    episodeImageUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(),
+                  ),
+                ),
+              ),
+              title: Text(
+                "$episodeNumberDisplay - $episodeName",
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
         );
       },
     );
   }
 
-  /// Affiche un item d'information.
   Widget _infoItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -616,7 +644,7 @@ class DetailPage extends StatelessWidget {
   Widget _buildComicAuthorsTab(Map<String, dynamic> details) {
     final authors = details['person_credits'] as List? ?? [];
     if (authors.isEmpty) {
-      return const Center(
+      return Center(
           child: Text("Aucun auteur disponible.",
               style: TextStyle(color: Colors.white70)));
     }
@@ -625,32 +653,67 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final author = authors[index];
         final authorName = author['name'] ?? "Nom inconnu";
-        final apiDetailUrl = author['api_detail_url'];
-        return FutureBuilder<String>(
-          future: apiDetailUrl != null
-              ? _fetchImage(apiDetailUrl)
-              : Future.value('https://via.placeholder.com/50'),
-          builder: (context, snapshot) {
-            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
-            return ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(40.0),
-                child: Image.network(
-                  imageUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.person, size: 50, color: Colors.white),
-                ),
+        if (author['image'] != null &&
+            author['image'] is Map &&
+            author['image']['medium_url'] != null) {
+          final imageUrl = author['image']['medium_url'];
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                imageUrl,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
               ),
-              title:
-                  Text(authorName, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(author['role'] ?? "",
-                  style: const TextStyle(color: Colors.white70)),
-            );
-          },
-        );
+            ),
+            title: Text(authorName, style: TextStyle(color: Colors.white)),
+            subtitle: Text(author['role'] ?? "",
+                style: TextStyle(color: Colors.white70)),
+          );
+        } else if (author['api_detail_url'] != null) {
+          return FutureBuilder<String>(
+            future: _fetchImage(author['api_detail_url']),
+            builder: (context, snapshot) {
+              final url = snapshot.data ?? "https://via.placeholder.com/50";
+              return ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(40.0),
+                  child: Image.network(
+                    url,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.person, size: 50, color: Colors.white),
+                  ),
+                ),
+                title: Text(authorName, style: TextStyle(color: Colors.white)),
+                subtitle: Text(author['role'] ?? "",
+                    style: TextStyle(color: Colors.white70)),
+              );
+            },
+          );
+        } else {
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                "https://via.placeholder.com/50",
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+            ),
+            title: Text(authorName, style: TextStyle(color: Colors.white)),
+            subtitle: Text(author['role'] ?? "",
+                style: TextStyle(color: Colors.white70)),
+          );
+        }
       },
     );
   }
@@ -658,7 +721,7 @@ class DetailPage extends StatelessWidget {
   Widget _buildComicCharactersTab(Map<String, dynamic> details) {
     final characters = details['character_credits'] as List? ?? [];
     if (characters.isEmpty) {
-      return const Center(
+      return Center(
           child: Text("Aucun personnage disponible.",
               style: TextStyle(color: Colors.white)));
     }
@@ -667,30 +730,62 @@ class DetailPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         final characterName = character['name'] ?? "Nom inconnu";
-        final apiDetailUrl = character['api_detail_url'];
-        return FutureBuilder<String>(
-          future: apiDetailUrl != null
-              ? _fetchImage(apiDetailUrl)
-              : Future.value('https://via.placeholder.com/50'),
-          builder: (context, snapshot) {
-            final imageUrl = snapshot.data ?? 'https://via.placeholder.com/50';
-            return ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(40.0),
-                child: Image.network(
-                  imageUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.person, size: 50, color: Colors.white),
-                ),
+        if (character['image'] != null &&
+            character['image'] is Map &&
+            character['image']['medium_url'] != null) {
+          final imageUrl = character['image']['medium_url'];
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                imageUrl,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
               ),
-              title: Text(characterName,
-                  style: const TextStyle(color: Colors.white)),
-            );
-          },
-        );
+            ),
+            title: Text(characterName, style: TextStyle(color: Colors.white)),
+          );
+        } else if (character['api_detail_url'] != null) {
+          return FutureBuilder<String>(
+            future: _fetchImage(character['api_detail_url']),
+            builder: (context, snapshot) {
+              final url = snapshot.data ?? "https://via.placeholder.com/50";
+              return ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(40.0),
+                  child: Image.network(
+                    url,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.person, size: 50, color: Colors.white),
+                  ),
+                ),
+                title:
+                    Text(characterName, style: TextStyle(color: Colors.white)),
+              );
+            },
+          );
+        } else {
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(40.0),
+              child: Image.network(
+                "https://via.placeholder.com/50",
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+            ),
+            title: Text(characterName, style: TextStyle(color: Colors.white)),
+          );
+        }
       },
     );
   }
@@ -700,17 +795,13 @@ class DetailPage extends StatelessWidget {
     String realName = details['real_name'] ?? "Inconnu";
     String aliases = details['aliases'] ?? "Aucun alias";
     String publisher = details['publisher']?["name"] ?? "Inconnu";
-    String gender;
-    if (details['gender'] == 1) {
-      gender = "Homme";
-    } else if (details['gender'] == 2) {
-      gender = "Femme";
-    } else {
-      gender = "Inconnu";
-    }
+    String gender = details['gender'] == 1
+        ? "Homme"
+        : details['gender'] == 2
+            ? "Femme"
+            : "Inconnu";
     String birth = details['birth'] ?? "Inconnu";
     String death = details['death'] ?? "Inconnu";
-
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
@@ -728,7 +819,7 @@ class DetailPage extends StatelessWidget {
   Widget _buildCharacterEnemiesTab(Map<String, dynamic> details) {
     final enemies = details['character_enemies'] as List? ?? [];
     if (enemies.isEmpty) {
-      return const Center(
+      return Center(
           child: Text("Aucun ennemi disponible.",
               style: TextStyle(color: Colors.white)));
     }
@@ -746,19 +837,17 @@ class DetailPage extends StatelessWidget {
               height: 50,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.person, size: 50, color: Colors.white),
+                  Icon(Icons.person, size: 50, color: Colors.white),
             ),
           ),
-          title: Text(enemyName, style: const TextStyle(color: Colors.white)),
+          title: Text(enemyName, style: TextStyle(color: Colors.white)),
         );
       },
     );
   }
 
   String cleanHtml(String html) {
-    return html.replaceAllMapped(
-      RegExp(r'<img[^>]+src="([^">]+)"[^>]*>'),
-      (match) => '<img src="${match.group(1)}" />',
-    );
+    return html.replaceAllMapped(RegExp(r'<img[^>]+src="([^">]+)"[^>]*>'),
+        (match) => '<img src="${match.group(1)}" />');
   }
 }
